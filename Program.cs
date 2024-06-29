@@ -1,29 +1,60 @@
 using System;
+using System.Diagnostics;
+using System.IO;
+using System.Net.Http;
+using Newtonsoft.Json;
+using RustdeskSetup;
 
-namespace RustdeskSetup
+class Program
 {
-    internal class Program
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
-        {
-            var commandLineArgs = CommandLineArgs.Parse(args);
+        // Parse command line arguments
+        var parsedArgs = CommandLineArgs.Parse(args);
+        
+        // Set up configuration
+        bool useStableVersion = Configuration.UseStableVersion ?? parsedArgs.UseStableVersion;
+        string rustdeskCfg = Configuration.RustdeskCfg ?? parsedArgs.RustdeskCfg;
+        string rustdeskPw = Configuration.RustdeskPw ?? parsedArgs.RustdeskPw;
+        
+        if (rustdeskCfg == "someConfigValue") rustdeskCfg = string.Empty;
+        if (rustdeskPw == "somePassword") rustdeskPw = string.Empty;
 
-            if (commandLineArgs.ShouldShowHelp)
+        // Log setup
+        string editionString = useStableVersion ? "Stable" : "Nightly";
+        string logFilePath = $"c:\\Rustdesk-{editionString}-Install.log";
+        StreamWriter log = new StreamWriter(logFilePath, true);
+
+        try
+        {
+            Console.SetOut(log);
+            Console.SetError(log);
+            
+            log.WriteLine($"Rustdesk-{editionString} started at: {DateTime.Now}");
+
+            var rustdeskInfo = Utility.GetLatestRustdeskInfo(useStableVersion);
+            if (rustdeskInfo.downloadUrl == null || rustdeskInfo.version == null)
             {
-                CommandLineArgs.ShowHelp();
+                log.WriteLine("Failed to retrieve Rustdesk information. Exiting.");
                 return;
             }
 
-            // Set configuration from command line args or defaults
-            Configuration.UseStableVersion = commandLineArgs.UseStableVersion;
-            Configuration.RustdeskCfg = commandLineArgs.RustdeskCfg == "someConfigValue" ? null : commandLineArgs.RustdeskCfg;
-            Configuration.RustdeskPw = commandLineArgs.RustdeskPw == "somePassword" ? null : commandLineArgs.RustdeskPw;
+            Utility.DownloadAndInstallRustdesk(rustdeskInfo.downloadUrl, rustdeskInfo.version);
+            string rustdeskId = Utility.GetRustdeskId();
+            Utility.ConfigureAndRunRustdesk(rustdeskId, rustdeskCfg, rustdeskPw);
+            Utility.SaveRustdeskInfo(rustdeskId);
+            Utility.DisplayPopup(rustdeskId, rustdeskInfo.version);
+            Utility.Cleanup();
 
-            // Logic to handle installation and configuration
-            if (!string.IsNullOrEmpty(Configuration.RustdeskCfg) || !string.IsNullOrEmpty(Configuration.RustdeskPw))
-            {
-                Utility.ConfigureAndRunRustdesk();
-            }
+            log.WriteLine($"Rustdesk-{editionString} ended at: {DateTime.Now}");
+        }
+        catch (Exception ex)
+        {
+            log.WriteLine($"Error: {ex.Message}");
+        }
+        finally
+        {
+            log.Close();
         }
     }
 }
