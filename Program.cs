@@ -30,7 +30,7 @@ class Program
             Console.SetOut(log);
             Console.SetError(log);
             
-            log.WriteLine($"Rustdesk-{editionString} started at: {DateTime.Now}");
+            log.WriteLine($"=== Rustdesk-{editionString} started at: {DateTime.Now} ===");
 
             var rustdeskInfo = Utility.GetLatestRustdeskInfo(useStableVersion);
             if (rustdeskInfo.downloadUrl == null || rustdeskInfo.version == null)
@@ -46,7 +46,7 @@ class Program
             Utility.DisplayPopup(rustdeskId, rustdeskInfo.version);
             Utility.Cleanup();
 
-            log.WriteLine($"Rustdesk-{editionString} ended at: {DateTime.Now}");
+            log.WriteLine($"=== Rustdesk-{editionString} ended at: {DateTime.Now} ===");
         }
         catch (Exception ex)
         {
