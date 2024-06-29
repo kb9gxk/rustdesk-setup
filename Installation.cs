@@ -8,11 +8,11 @@ namespace RustdeskSetup
     {
         internal static void DownloadAndInstallRustdesk(string url, string tempDir)
         {
-            InstallationSettings.Log?.WriteLine($"Downloading latest {InstallationSettings.EditionString} Rustdesk build...");
+            InstallationSettings.log?.WriteLine($"Downloading latest {InstallationSettings.editionString} Rustdesk build...");
 
             try
             {
-                var response = InstallationSettings.HttpClient.GetAsync(url).Result;
+                var response = InstallationSettings.httpClient.GetAsync(url).Result;
                 response.EnsureSuccessStatusCode();
 
                 string fileName = Path.GetFileName(new Uri(url).LocalPath);
@@ -23,7 +23,7 @@ namespace RustdeskSetup
                     response.Content.CopyToAsync(fileStream).Wait();
                 }
 
-                InstallationSettings.RustdeskExe = fileName;
+                InstallationSettings.rustdeskExe = fileName;
 
                 var installProcess = Process.Start(new ProcessStartInfo
                 {
@@ -36,7 +36,7 @@ namespace RustdeskSetup
             }
             catch (Exception ex)
             {
-                InstallationSettings.Log?.WriteLine($"Error downloading or installing {InstallationSettings.EditionString} Rustdesk: {ex.Message}");
+                InstallationSettings.log?.WriteLine($"Error downloading or installing {InstallationSettings.editionString} Rustdesk: {ex.Message}");
             }
 
             System.Threading.Thread.Sleep(20000); // Wait for 20 seconds
@@ -47,23 +47,23 @@ namespace RustdeskSetup
             }
             catch (Exception ex)
             {
-                InstallationSettings.Log?.WriteLine($"Error deleting desktop shortcut: {ex.Message}");
+                InstallationSettings.log?.WriteLine($"Error deleting desktop shortcut: {ex.Message}");
             }
         }
 
         internal static string GetRustdeskDirectory()
         {
-            return Path.Combine(InstallationSettings.ProgramFilesDir, "RustDesk");
+            return Path.Combine(InstallationSettings.programFilesDir, "RustDesk");
         }
 
         internal static string GetRustdeskExecutable(string rustdeskDir)
         {
-            return Path.Combine(rustdeskDir, InstallationSettings.RustdeskExe);
+            return Path.Combine(rustdeskDir, InstallationSettings.rustdeskExe);
         }
 
         internal static string GetRustdeskId(string runMe, string rustdeskDir)
         {
-            InstallationSettings.Log?.WriteLine("Getting Rustdesk ID...");
+            InstallationSettings.log?.WriteLine("Getting Rustdesk ID...");
             var processStartInfo = new ProcessStartInfo
             {
                 FileName = runMe,
@@ -82,7 +82,7 @@ namespace RustdeskSetup
             }
             catch (Exception ex)
             {
-                InstallationSettings.Log?.WriteLine($"Error getting Rustdesk ID: {ex.Message}");
+                InstallationSettings.log?.WriteLine($"Error getting Rustdesk ID: {ex.Message}");
                 return null;
             }
         }
@@ -95,7 +95,7 @@ namespace RustdeskSetup
             }
             catch (Exception ex)
             {
-                InstallationSettings.Log?.WriteLine($"Error cleaning up temp directory: {ex.Message}");
+                InstallationSettings.log?.WriteLine($"Error cleaning up temp directory: {ex.Message}");
             }
         }
     }

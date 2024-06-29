@@ -1,3 +1,5 @@
+﻿// CommandLineArgs.cs
+
 using System;
 using System.Diagnostics;
 
@@ -29,7 +31,7 @@ namespace RustdeskSetup
                 }
                 else if (args[i].StartsWith("--config=", StringComparison.OrdinalIgnoreCase))
                 {
-                    parsedArgs.RustdeskCfg = args[i].Substring("--config=".Length).TrimStart('=');
+                    parsedArgs.RustdeskCfg = args[i].Substring("--config=".Length);
                 }
                 else if (args[i].StartsWith("--password=", StringComparison.OrdinalIgnoreCase))
                 {
@@ -38,14 +40,24 @@ namespace RustdeskSetup
                 else if (args[i].Equals("--help", StringComparison.OrdinalIgnoreCase))
                 {
                     parsedArgs.ShouldShowHelp = true;
-                    return parsedArgs;
+                    return parsedArgs; // Return immediately to show help
                 }
+                // Add additional argument handling as needed
             }
 
+            // Default useStableVersion to true if not specified
             if (!useStableVersionSet)
             {
+                // Determine default based on executable name
                 string executableName = Process.GetCurrentProcess().ProcessName.ToLower();
-                parsedArgs.UseStableVersion = !executableName.StartsWith("rustdesk-nightly");
+                if (executableName.StartsWith("rustdesk-nightly"))
+                {
+                    parsedArgs.UseStableVersion = false; // Nightly build detected
+                }
+                else
+                {
+                    parsedArgs.UseStableVersion = true; // Default to stable
+                }
             }
 
             return parsedArgs;

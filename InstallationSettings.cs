@@ -5,24 +5,25 @@ namespace RustdeskSetup
 {
     internal static class InstallationSettings
     {
-        internal static string TempDir = Path.GetTempPath();
-        internal static string ProgramFilesDir = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
-        internal static string EditionString = Configuration.UseStableVersion ? "Stable" : "Nightly";
-        internal static string GitHubStableApiUrl = "https://api.github.com/repos/rustdesk/rustdesk/releases/latest";
-        internal static string GitHubNightlyApiUrl = "https://api.github.com/repos/rustdesk/rustdesk/releases/tags/nightly";
-        internal static string LogFilePath = $"c:\\Rustdesk-{EditionString}-Install.log";
-        internal static StreamWriter? Log;
-        internal static string RustdeskExe; // Will be dynamically set during installation
-        internal static System.Net.Http.HttpClient HttpClient = new System.Net.Http.HttpClient();
+        internal static string tempDir = Path.GetTempPath();
+        internal static string programFilesDir = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+        internal static string editionString = Configuration.useStableVersion ? "Stable" : "Nightly";
+        internal static string githubStableApiUrl = "https://api.github.com/repos/rustdesk/rustdesk/releases/latest";
+        internal static string githubNightlyApiUrl = "https://api.github.com/repos/rustdesk/rustdesk/releases/tags/nightly";
+        internal static string logFilePath = $"c:\\Rustdesk-{editionString}-Install.log";
+        internal static StreamWriter? log;
+        internal static string rustdeskExe; // Will be dynamically set during installation
+        internal static string rustdeskCfg; // Ensure these are accessible
+        internal static HttpClient httpClient = new HttpClient();
 
         internal static void RedirectConsoleOutput()
         {
             try
             {
-                Log = new StreamWriter(LogFilePath, append: true) { AutoFlush = true };
-                Log.WriteLine($"--- Rustdesk-{EditionString} started at: {DateTime.Now} ---");
-                Console.SetOut(Log);
-                Console.SetError(Log);
+                log = new StreamWriter(logFilePath, append: true) { AutoFlush = true };
+                log.WriteLine($"--- Rustdesk-{editionString} started at: {DateTime.Now} ---");
+                Console.SetOut(log);
+                Console.SetError(log);
             }
             catch (Exception ex)
             {
@@ -34,11 +35,11 @@ namespace RustdeskSetup
         {
             try
             {
-                Log?.WriteLine($"--- Rustdesk-{EditionString} ended at: {DateTime.Now} ---");
+                log?.WriteLine($"--- Rustdesk-{editionString} ended at: {DateTime.Now} ---");
                 var standardOutput = new StreamWriter(Console.OpenStandardOutput()) { AutoFlush = true };
                 Console.SetOut(standardOutput);
                 Console.SetError(standardOutput);
-                Log?.Dispose();
+                log?.Dispose();
             }
             catch (Exception ex)
             {

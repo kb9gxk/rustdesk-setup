@@ -16,25 +16,26 @@ namespace RustdeskSetup
 
                 HttpResponseMessage response = httpClient.GetAsync(apiUrl).Result;
                 response.EnsureSuccessStatusCode();
+                string json = response.Content.ReadAsStringAsync().Result;
 
-                string responseData = response.Content.ReadAsStringAsync().Result;
-                GitHubRelease release = JsonConvert.DeserializeObject<GitHubRelease>(responseData);
+                var release = JsonConvert.DeserializeObject<GitHubRelease>(json);
 
-                string downloadUrl = null;
                 foreach (var asset in release.assets)
                 {
-                    if (asset.name.EndsWith(".exe"))
+                    if (asset.name.EndsWith("-x86_64.exe"))
                     {
-                        downloadUrl = asset.browser_download_url;
-                        break;
+                        string fileName = Path.GetFileName(asset.name);
+                        string version = fileName.Split('-')[1];
+                        return (asset.browser_download_url, version);
                     }
                 }
 
-                return (downloadUrl, release.tag_name);
+                InstallationSettings.log?.WriteLine($"No {InstallationSettings.editionString} release found in GitHub response.");
+                return (null, null);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error fetching Rustdesk release info: {ex.Message}");
+                InstallationSettings.log?.WriteLine($"Error fetching {InstallationSettings.editionString} Rustdesk URL: {ex.Message}");
                 return (null, null);
             }
         }
