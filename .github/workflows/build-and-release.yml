@@ -30,19 +30,14 @@ jobs:
           $formattedTime2 = $chicagoTime.ToString("yyyy.M.dd")
           echo "formatted_time=$formattedTime" >> $GITHUB_OUTPUT
           echo "formatted_time2=$formattedTime2" >> $GITHUB_OUTPUT
+          echo "formatted_time_linux=$(date -d "$($chicagoTime.ToString('yyyy-MM-dd HH:mm:ss'))" +%Y.%m.%d.%H%M)" >> $GITHUB_OUTPUT
         shell: pwsh
 
       - name: Update Assembly and File Version
         run: |
-          $projectFile = "rustdesk-setup.csproj"
-          $version = "${{ steps.timestamp.outputs.formatted_time }}"
-          $version2 = "${{ steps.timestamp.outputs.formatted_time2 }}"
-          
-          $xml = [xml](Get-Content $projectFile)
-          $xml.Project.PropertyGroup.AssemblyVersion = $version
-          $xml.Project.PropertyGroup.FileVersion = $version
-          $xml.Project.PropertyGroup.Version = $version2
-          $xml.Save($projectFile)
+          dotnet add package dotnet-proj --version 0.10.1
+          dotnet tool restore
+          dotnet proj -v "${{ steps.timestamp.outputs.formatted_time }}" -f "${{ steps.timestamp.outputs.formatted_time }}" -p "${{ steps.timestamp.outputs.formatted_time2 }}" rustdesk-setup.csproj
 
       - name: Modify Configuration.cs (Jeff)
         if: matrix.build_type == 'jeff'
@@ -69,30 +64,21 @@ jobs:
 
       - name: Rename Published Executable
         run: |
-          $exeFile = Get-ChildItem -Path "publish" -Filter "*.exe" | Select-Object -ExpandProperty Name
+          $exeFile = Get-ChildItem -Path "publish" -Filter "*.exe" | Select-Object -First 1 -ExpandProperty FullName
           if (-not $exeFile) {
             Write-Host "ERROR: No executable found in publish directory!"
             exit 1
           }
-          if ("${{ matrix.build_type }}" -eq "jeff") {
-              Move-Item -Path "publish\$exeFile" -Destination "publish\rustdesk-setup-jeff.exe" -Force
-          } else {
-              Move-Item -Path "publish\$exeFile" -Destination "publish\rustdesk-setup.exe" -Force
-          }
+          $newExeName = "publish/rustdesk-setup${{ matrix.build_type == 'jeff' && '-jeff' || '' }}.exe"
+          Move-Item -Path $exeFile -Destination $newExeName -Force
         shell: pwsh
 
       - name: Verify Output File
         run: |
-          if ("${{ matrix.build_type }}" -eq "jeff") {
-            if (!(Test-Path "publish/rustdesk-setup-jeff.exe")) { 
-              Write-Host "ERROR: rustdesk-setup-jeff.exe not found in publish directory!"
-              exit 1 
-            }
-          } else {
-            if (!(Test-Path "publish/rustdesk-setup.exe")) { 
-              Write-Host "ERROR: rustdesk-setup.exe not found in publish directory!"
-              exit 1 
-            }
+          $exeFile = "publish/rustdesk-setup${{ matrix.build_type == 'jeff' && '-jeff' || '' }}.exe"
+          if (!(Test-Path $exeFile)) {
+            Write-Host "ERROR: $exeFile not found in publish directory!"
+            exit 1
           }
 
       - name: Decode and Save PFX Certificate
@@ -117,19 +103,17 @@ jobs:
         env:
           CODE_SIGNING_CERTIFICATE_PASSWORD: ${{ secrets.CODE_SIGNING_CERTIFICATE_PASSWORD }}
         run: |
-          if ("${{ matrix.build_type }}" -eq "jeff") {
-              & "C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x64\signtool.exe" sign /fd SHA256 /f codesigning.pfx /p "$env:CODE_SIGNING_CERTIFICATE_PASSWORD" /t http://timestamp.digicert.com /v publish\rustdesk-setup-jeff.exe
-          } else {
-              & "C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x64\signtool.exe" sign /fd SHA256 /f codesigning.pfx /p "$env:CODE_SIGNING_CERTIFICATE_PASSWORD" /t http://timestamp.digicert.com /v publish\rustdesk-setup.exe
-          }
+          $exeFile = "publish/rustdesk-setup${{ matrix.build_type == 'jeff' && '-jeff' || '' }}.exe"
+          & "C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x64\signtool.exe" sign /fd SHA256 /f codesigning.pfx /p "$env:CODE_SIGNING_CERTIFICATE_PASSWORD" /t http://timestamp.digicert.com /v $exeFile
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: rustdesk-installer-${{ matrix.build_type }} # Unique artifact name
-          path: |
-            publish/rustdesk-setup.exe
-            publish/rustdesk-setup-jeff.exe
+          path: publish/rustdesk-setup${{ matrix.build_type == 'jeff' && '-jeff' || '' }}.exe
+    
+    outputs:
+      formatted_time_linux: ${{ steps.timestamp.outputs.formatted_time_linux }}
 
   release:
     needs: build
@@ -145,24 +129,16 @@ jobs:
           name: rustdesk-installer-${{ matrix.build_type }} # Match artifact name
           path: artifacts
 
-      - name: Get Chicago Timestamp
-        id: timestamp
-        run: |
-          $chicagoTime = Get-Date -Date (Get-Date).ToUniversalTime() -TimeZone "America/Chicago"
-          $formattedTime = $chicagoTime.ToString("yyyy.M.dd.HHmm")
-          echo "formatted_time=$formattedTime" >> $GITHUB_OUTPUT
-        shell: pwsh
-
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v${{ steps.timestamp.outputs.formatted_time }}-${{ matrix.build_type }} # Unique tag name
-          release_name: Release v${{ steps.timestamp.outputs.formatted_time }} (${{ matrix.build_type }})
+          tag_name: v${{ needs.build.outputs.formatted_time_linux }}-${{ matrix.build_type }} # Unique tag name
+          release_name: Release v${{ needs.build.outputs.formatted_time_linux }} (${{ matrix.build_type }})
           body: |
-            Rustdesk installer build ${{ steps.timestamp.outputs.formatted_time }} (${{ matrix.build_type }}).
+            Rustdesk installer build ${{ needs.build.outputs.formatted_time_linux }} (${{ matrix.build_type }}).
           draft: false
           prerelease: false
 
