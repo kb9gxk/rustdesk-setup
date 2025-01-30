@@ -22,30 +22,46 @@ jobs:
       - name: Modify Configuration.cs
         run: |
           $configFile = "Configuration.cs"
-          $configContent = Get-Content $configFile
-          $newConfigContent = $configContent -replace 'internal static string RustdeskCfg { get; set; } = DefaultConfigValue;', "internal static string RustdeskCfg { get; set; } = '${{ secrets.RUSTDESK_CONFIG }}';"
-          $newConfigContent = $newConfigContent -replace 'internal static string RustdeskPw { get; set; } = DefaultPasswordValue;', "internal static string RustdeskPw { get; set; } = '${{ secrets.RUSTDESK_PASSWORD }}';"
-          $newConfigContent | Set-Content $configFile
+          if (Test-Path $configFile) {
+            $configContent = Get-Content $configFile
+            $newConfigContent = $configContent -replace 'internal static string RustdeskCfg { get; set; } = DefaultConfigValue;', "internal static string RustdeskCfg { get; set; } = `"`${{ secrets.RUSTDESK_CONFIG }}`"`;"
+            $newConfigContent = $newConfigContent -replace 'internal static string RustdeskPw { get; set; } = DefaultPasswordValue;', "internal static string RustdeskPw { get; set; } = `"`${{ secrets.RUSTDESK_PASSWORD }}`"`;"
+            $newConfigContent | Set-Content $configFile
+          } else {
+            Write-Host "Configuration.cs not found!"
+            exit 1
+          }
 
       - name: Restore dependencies
         run: dotnet restore
 
       - name: Build project
-        run: dotnet build --configuration Release
+        run: dotnet build --configuration Release --no-restore
 
       - name: Publish project
-        run: dotnet publish --configuration Release --output publish
+        run: dotnet publish --configuration Release --output publish --no-build
+
+      - name: Verify Output File
+        run: |
+          if (!(Test-Path "publish/RustdeskSetup.exe")) { 
+            Write-Host "ERROR: RustdeskSetup.exe not found in publish directory!" 
+            exit 1 
+          }
 
       - name: Decode and Save PFX Certificate
         env:
           CODE_SIGNING_CERTIFICATE: ${{ secrets.CODE_SIGNING_CERTIFICATE }}
         run: |
+          if ("$env:CODE_SIGNING_CERTIFICATE" -eq "") {
+            Write-Host "ERROR: CODE_SIGNING_CERTIFICATE secret is missing!"
+            exit 1
+          }
           [System.Convert]::FromBase64String("$env:CODE_SIGNING_CERTIFICATE") | Set-Content -Path "codesigning.pfx" -Encoding Byte
 
       - name: Verify Certificate File
         run: |
           if (!(Test-Path "codesigning.pfx")) { 
-            Write-Host "Certificate file not found!" 
+            Write-Host "ERROR: Certificate file not found!" 
             exit 1 
           }
 
