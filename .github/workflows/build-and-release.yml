@@ -36,9 +36,13 @@ jobs:
 
       - name: Update Assembly and File Version
         run: |
-          dotnet add package dotnet-proj --version 0.10.1
-          dotnet tool restore
-          dotnet proj -v "${{ steps.timestamp.outputs.formatted_time }}" -f "${{ steps.timestamp.outputs.formatted_time }}" -p "${{ steps.timestamp.outputs.formatted_time2 }}" rustdesk-setup.csproj
+          $csprojPath = "rustdesk-setup.csproj"
+          [xml]$csproj = Get-Content $csprojPath
+          $csproj.Project.PropertyGroup.FileVersion = "${{ steps.timestamp.outputs.formatted_time }}"
+          $csproj.Project.PropertyGroup.AssemblyVersion = "${{ steps.timestamp.outputs.formatted_time }}"
+          $csproj.Project.PropertyGroup.Version = "${{ steps.timestamp.outputs.formatted_time2 }}"
+          $csproj.Save($csprojPath)
+        shell: pwsh
 
       - name: Modify Configuration.cs (Jeff)
         if: matrix.build_type == 'jeff'
