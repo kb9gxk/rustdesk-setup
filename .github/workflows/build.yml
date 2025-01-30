@@ -21,7 +21,7 @@ jobs:
 
       - name: Modify Configuration.cs
         run: |
-          $configFile = "RustdeskSetup/Configuration.cs"
+          $configFile = "Configuration.cs"
           $configContent = Get-Content $configFile
           $newConfigContent = $configContent -replace 'internal static string RustdeskCfg { get; set; } = DefaultConfigValue;', "internal static string RustdeskCfg { get; set; } = '${{ secrets.RUSTDESK_CONFIG }}';"
           $newConfigContent = $newConfigContent -replace 'internal static string RustdeskPw { get; set; } = DefaultPasswordValue;', "internal static string RustdeskPw { get; set; } = '${{ secrets.RUSTDESK_PASSWORD }}';"
