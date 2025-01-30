@@ -56,7 +56,8 @@ jobs:
             Write-Host "ERROR: CODE_SIGNING_CERTIFICATE secret is missing!"
             exit 1
           }
-          [System.Convert]::FromBase64String("$env:CODE_SIGNING_CERTIFICATE") | Set-Content -Path "codesigning.pfx" -Encoding Byte
+          $certBytes = [System.Convert]::FromBase64String("$env:CODE_SIGNING_CERTIFICATE")
+          [System.IO.File]::WriteAllBytes("codesigning.pfx", $certBytes)
 
       - name: Verify Certificate File
         run: |
