@@ -8,58 +8,34 @@ namespace RustdeskSetup
     internal class Program
     {
         static async Task Main(string[] args)
+{
+    InstallationSettings.RedirectConsoleOutput();
+    try
+    {
+        var commandLineArgs = CommandLineArgs.Parse();
+
+        if (commandLineArgs.ShouldShowHelp)
         {
-            InstallationSettings.RedirectConsoleOutput();
-            try
-            {
-                var commandLineArgs = CommandLineArgs.Parse();
-
-                // Determine initial useStableVersion based on executable name
-                bool useStableVersion = CommandLineArgs.DetermineDefaultUseStableVersion();
-
-                // Override with Configuration.cs settings
-                if (Configuration.useStableVersion.HasValue)
-                {
-                    useStableVersion = Configuration.useStableVersion.Value;
-                }
-
-                // Override with command line arguments
-                if (commandLineArgs.UseStableVersion.HasValue)
-                {
-                    useStableVersion = commandLineArgs.UseStableVersion.Value;
-                }
-
-                // Handle rustdeskCfg default value scenario
-                if (Configuration.rustdeskCfg == "someConfigValue" && string.IsNullOrEmpty(commandLineArgs.RustdeskCfg))
-                {
-                    Configuration.rustdeskCfg = string.Empty; // Empty the string
-                }
-                else if (!string.IsNullOrEmpty(commandLineArgs.RustdeskCfg))
-                {
-                    Configuration.rustdeskCfg = commandLineArgs.RustdeskCfg;
-                }
-
-                // Handle rustdeskPw default value scenario
-                if (Configuration.rustdeskPw == "somePassword" && string.IsNullOrEmpty(commandLineArgs.RustdeskPw))
-                {
-                    Configuration.rustdeskPw = string.Empty; // Empty the string
-                }
-                else if (!string.IsNullOrEmpty(commandLineArgs.RustdeskPw))
-                {
-                    Configuration.rustdeskPw = commandLineArgs.RustdeskPw;
-                }
-
-                await InitializeAsync(useStableVersion);
-            }
-            catch (Exception ex)
-            {
-                InstallationSettings.log?.WriteLine($"Error in Main method: {ex.Message}");
-            }
-            finally
-            {
-                InstallationSettings.ResetConsoleOutput();
-            }
+            CommandLineArgs.ShowHelp();
+            return;
         }
+
+        bool useStableVersion = commandLineArgs.UseStableVersion ?? CommandLineArgs.DetermineDefaultUseStableVersion();
+
+        Configuration.rustdeskCfg = string.IsNullOrEmpty(commandLineArgs.RustdeskCfg) ? Configuration.rustdeskCfg == "someConfigValue" ? string.Empty : Configuration.rustdeskCfg : commandLineArgs.RustdeskCfg;
+        Configuration.rustdeskPw = string.IsNullOrEmpty(commandLineArgs.RustdeskPw) ? Configuration.rustdeskPw == "somePassword" ? string.Empty : Configuration.rustdeskPw : commandLineArgs.RustdeskPw;
+
+        await InitializeAsync(useStableVersion);
+    }
+    catch (Exception ex)
+    {
+        InstallationSettings.log?.WriteLine($"Error in Main method: {ex.Message}");
+    }
+    finally
+    {
+        InstallationSettings.ResetConsoleOutput();
+    }
+}
 
         static async Task InitializeAsync(bool useStableVersion)
         {
