@@ -13,17 +13,19 @@
 	<Company>Jeff Parrish</Company>
 	<ProductName>JP Custom Rustdesk Installer</ProductName>
 	<Description>JP Custom Rustdesk Installer</Description>
-	<Copyright>© 2023-2024</Copyright>
-	<AssemblyVersion>2024.6.28.1234</AssemblyVersion>
-	<FileVersion>2024.6.28.1234</FileVersion>
+	<Copyright>© 2023-2025</Copyright>
+	<AssemblyVersion>2025.1.30.1010</AssemblyVersion>
+	<FileVersion>2024.1.30.1010</FileVersion>
 	<ApplicationManifest>app.manifest</ApplicationManifest>
 	<Authors>Jeff Parrish</Authors>
 	<NeutralLanguage>en-US</NeutralLanguage>
 	<SignAssembly>False</SignAssembly>
 	<Product>JP Custom Rustdesk Installer</Product>
-	<Version>2024.6.28</Version>
+	<Version>2025.1.30</Version>
 	<Platforms>AnyCPU;x64</Platforms>
 	<PublishTrimmed>True</PublishTrimmed>
+	<RuntimeIdentifier>win-x64</RuntimeIdentifier>
+	<TrimMode>full</TrimMode>
   </PropertyGroup>
   <PropertyGroup Condition="'$(InstallationSettings)|$(Platform)'=='Debug|AnyCPU'">
     <DebugType>none</DebugType>
@@ -51,11 +53,6 @@
 
   <ItemGroup>
 	<Folder Include="Properties\" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="RestSharp" Version="112.0.0" />
   </ItemGroup>
 
 </Project>
