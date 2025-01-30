@@ -1,4 +1,3 @@
-// GitHubHelper.cs
 using System;
 using System.Net.Http;
 using System.Text.Json;
@@ -12,7 +11,7 @@ namespace RustdeskSetup
         private static readonly HttpClient httpClient = new HttpClient();
         private static readonly Regex versionRegex = new Regex(@"(\d+\.\d+\.\d+)", RegexOptions.Compiled);
 
-        internal static async Task<(string downloadUrl, string version)> GetLatestRustdeskInfoAsync(string apiUrl)
+        internal static async Task<(string? downloadUrl, string? version)> GetLatestRustdeskInfoAsync(string apiUrl)
         {
             try
             {
@@ -33,7 +32,7 @@ namespace RustdeskSetup
 
                     foreach (var asset in release.assets)
                     {
-                        if (asset.name.EndsWith("-x86_64.exe"))
+                        if (asset.name != null && asset.name.EndsWith("-x86_64.exe"))
                         {
                             string fileName = Path.GetFileName(asset.name);
                             Match match = versionRegex.Match(fileName);
