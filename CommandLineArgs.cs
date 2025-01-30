@@ -7,7 +7,7 @@ namespace RustdeskSetup
 {
     internal class CommandLineArgs
     {
-        internal bool UseStableVersion { get; private set; }
+        internal bool? UseStableVersion { get; private set; }
         internal string RustdeskCfg { get; private set; }
         internal string RustdeskPw { get; private set; }
         internal bool ShouldShowHelp { get; private set; }
