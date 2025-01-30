@@ -40,9 +40,42 @@ jobs:
         run: |
           $csprojPath = "rustdesk-setup.csproj"
           [xml]$csproj = Get-Content $csprojPath
-          $csproj.Project.PropertyGroup.FileVersion = "${{ steps.timestamp.outputs.formatted_time }}"
-          $csproj.Project.PropertyGroup.AssemblyVersion = "${{ steps.timestamp.outputs.formatted_time }}"
-          $csproj.Project.PropertyGroup.Version = "${{ steps.timestamp.outputs.formatted_time2 }}"
+          
+          # Ensure PropertyGroup exists
+          if (-not $csproj.Project.PropertyGroup) {
+            $propertyGroup = $csproj.CreateElement("PropertyGroup")
+            $csproj.Project.AppendChild($propertyGroup)
+          } else {
+            $propertyGroup = $csproj.Project.PropertyGroup[0]
+          }
+
+          # Add or update FileVersion
+          if (-not $propertyGroup.FileVersion) {
+            $fileVersion = $csproj.CreateElement("FileVersion")
+            $fileVersion.InnerText = "${{ steps.timestamp.outputs.formatted_time }}"
+            $propertyGroup.AppendChild($fileVersion)
+          } else {
+            $propertyGroup.FileVersion = "${{ steps.timestamp.outputs.formatted_time }}"
+          }
+
+          # Add or update AssemblyVersion
+          if (-not $propertyGroup.AssemblyVersion) {
+            $assemblyVersion = $csproj.CreateElement("AssemblyVersion")
+            $assemblyVersion.InnerText = "${{ steps.timestamp.outputs.formatted_time }}"
+            $propertyGroup.AppendChild($assemblyVersion)
+          } else {
+            $propertyGroup.AssemblyVersion = "${{ steps.timestamp.outputs.formatted_time }}"
+          }
+
+          # Add or update Version
+          if (-not $propertyGroup.Version) {
+            $version = $csproj.CreateElement("Version")
+            $version.InnerText = "${{ steps.timestamp.outputs.formatted_time2 }}"
+            $propertyGroup.AppendChild($version)
+          } else {
+            $propertyGroup.Version = "${{ steps.timestamp.outputs.formatted_time2 }}"
+          }
+
           $csproj.Save($csprojPath)
         shell: pwsh
 
