@@ -3,7 +3,7 @@ name: Build and Release Rustdesk Installer
 on:
   push:
     branches:
-      - main # or your main branch name
+      - main
   workflow_dispatch: # Allow manual triggering
 
 jobs:
@@ -17,15 +17,17 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: '9.0.x' # or your target .NET version
+          dotnet-version: '9.0.x' # Stay on .NET 9
 
       - name: Modify Configuration.cs
+        env:
+          RUSTDESK_CONFIG: ${{ secrets.RUSTDESK_CONFIG }}
+          RUSTDESK_PASSWORD: ${{ secrets.RUSTDESK_PASSWORD }}
         run: |
           $configFile = ".\\RustdeskSetup\\Configuration.cs"
-          $configContent = Get-Content $configFile
-          $newConfigContent = $configContent -replace 'internal static string RustdeskCfg { get; set; } = DefaultConfigValue;', "internal static string RustdeskCfg { get; set; } = '${{ secrets.RUSTDESK_CONFIG }}';"
-          $newConfigContent = $newConfigContent -replace 'internal static string RustdeskPw { get; set; } = DefaultPasswordValue;', "internal static string RustdeskPw { get; set; } = '${{ secrets.RUSTDESK_PASSWORD }}';"
-          $newConfigContent | Set-Content $configFile
+          (Get-Content $configFile) -replace 'internal static string RustdeskCfg { get; set; } = DefaultConfigValue;', "internal static string RustdeskCfg { get; set; } = '$env:RUSTDESK_CONFIG';" `
+          -replace 'internal static string RustdeskPw { get; set; } = DefaultPasswordValue;', "internal static string RustdeskPw { get; set; } = '$env:RUSTDESK_PASSWORD';" |
+          Set-Content $configFile
 
       - name: Restore dependencies
         run: dotnet restore
@@ -36,24 +38,33 @@ jobs:
       - name: Publish project
         run: dotnet publish --configuration Release --output publish
 
-      - name: Import code signing certificate
-        uses: step-security/code-signing-action@v1
-        with:
-          certificate: ${{ secrets.CODE_SIGNING_CERTIFICATE }}
-          certificatePassword: ${{ secrets.CODE_SIGNING_CERTIFICATE_PASSWORD }}
-          certificatePath: codesigning.pfx
-
-      - name: Sign the executable
+      - name: Decode and Save PFX Certificate
+        env:
+          CODE_SIGNING_CERTIFICATE: ${{ secrets.CODE_SIGNING_CERTIFICATE }}
         run: |
-          & "C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x64\signtool.exe" sign /f codesigning.pfx /p ${{ secrets.CODE_SIGNING_CERTIFICATE_PASSWORD }} /t http://timestamp.digicert.com /v publish\RustdeskSetup.exe
+          [System.Convert]::FromBase64String("$env:CODE_SIGNING_CERTIFICATE") | Set-Content -Path "codesigning.pfx" -Encoding Byte
+
+      - name: Verify Certificate File
+        run: |
+          if (!(Test-Path "codesigning.pfx")) { 
+            Write-Host "Certificate file not found!" 
+            exit 1 
+          }
+
+      - name: Sign the Executable
+        env:
+          CODE_SIGNING_CERTIFICATE_PASSWORD: ${{ secrets.CODE_SIGNING_CERTIFICATE_PASSWORD }}
+        run: |
+          & "C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x64\signtool.exe" sign /f codesigning.pfx /p "$env:CODE_SIGNING_CERTIFICATE_PASSWORD" /t http://timestamp.digicert.com /v publish\RustdeskSetup.exe
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4 # Updated to v4
+        uses: actions/upload-artifact@v4
         with:
           name: rustdesk-installer
           path: publish
 
       - name: Create Release
+        id: create_release
         uses: actions/create-release@v1
         if: github.ref == 'refs/heads/main'
         env:
