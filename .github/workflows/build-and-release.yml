@@ -16,6 +16,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }} # Ensure you have the correct permissions
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
@@ -42,6 +44,17 @@ jobs:
           $csproj.Project.PropertyGroup.AssemblyVersion = "${{ steps.timestamp.outputs.formatted_time }}"
           $csproj.Project.PropertyGroup.Version = "${{ steps.timestamp.outputs.formatted_time2 }}"
           $csproj.Save($csprojPath)
+        shell: pwsh
+
+      - name: Commit and Push Changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add rustdesk-setup.csproj
+          git commit -m "Update versions to ${{ steps.timestamp.outputs.formatted_time }}"
+          git push origin main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: pwsh
 
       - name: Modify Configuration.cs (Jeff)
