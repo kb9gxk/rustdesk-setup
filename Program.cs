@@ -1,70 +1,60 @@
 using System;
-using System.Diagnostics;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace RustdeskSetup
 {
-    internal static class Utility
-{
-    internal static void ConfigureAndRunRustdesk(string rustdeskId, string runMe, string rustdeskCfg, string rustdeskPw)
+    internal class Program
     {
-        InstallationSettings.log?.WriteLine("Configuring and starting Rustdesk...");
-
-        try
+        [STAThread] // Required for MessageBox to work correctly
+        static async Task Main(string[] args)
         {
-            using (var process = new Process())
+            InstallationSettings.RedirectConsoleOutput();
+            InstallationSettings.HideWindow();
+
+            CommandLineArgs parsedArgs = CommandLineArgs.Parse();
+
+            if (parsedArgs.ShouldShowHelp)
             {
-                process.StartInfo.FileName = runMe;
-
-                // Strip any leading '=' from rustdeskCfg
-                if (!string.IsNullOrEmpty(rustdeskCfg) && rustdeskCfg.StartsWith("="))
-                {
-                    rustdeskCfg = rustdeskCfg.Substring(1); // Remove the leading '='
-                }
-
-                var arguments = $"--config {rustdeskCfg}";
-                if (!string.IsNullOrEmpty(rustdeskPw))
-                {
-                    arguments += $" --password {rustdeskPw}";
-                }
-
-                process.StartInfo.Arguments = arguments;
-                process.StartInfo.UseShellExecute = false;
-                process.Start();
-                // Removed the wait for exit
+                CommandLineArgs.ShowHelp();
+                InstallationSettings.ResetConsoleOutput();
+                return;
             }
-        }
-        catch (Exception ex)
-        {
-            InstallationSettings.log?.WriteLine($"Error configuring or starting Rustdesk: {ex.Message}");
-        }
-    }
-    
-    internal static void SaveRustdeskInfo(string rustdeskId)
-    {
-        try
-        {
-            InstallationSettings.log?.WriteLine($"Computer: {Environment.MachineName}");
-            InstallationSettings.log?.WriteLine($"ID: {rustdeskId}");
-            File.WriteAllText(InstallationSettings.RustdeskInfoFilePath, $"Computer: {Environment.MachineName}\nID: {rustdeskId}");
-        }
-        catch (Exception ex)
-        {
-            InstallationSettings.log?.WriteLine($"Error saving Rustdesk info: {ex.Message}");
-        }
-    }
 
-    internal static void DisplayPopup(string rustdeskId, string version)
-    {
-        try
-        {
-            NativeMethods.MessageBox(IntPtr.Zero, $"Computer: {Environment.MachineName}\nID: {rustdeskId}\nVersion: {version}",
-                                     $"{InstallationSettings.editionString} Rustdesk Installer", 0);
-        }
-        catch (Exception ex)
-        {
-            InstallationSettings.log?.WriteLine($"Error displaying popup: {ex.Message}");
+            Configuration.UseStableVersion = parsedArgs.UseStableVersion;
+            Configuration.RustdeskCfg = parsedArgs.RustdeskCfg;
+            Configuration.RustdeskPw = parsedArgs.RustdeskPw;
+
+            string apiUrl = Configuration.UseStableVersion.Value ? InstallationSettings.githubStableApiUrl : InstallationSettings.githubNightlyApiUrl;
+            
+            (string? downloadUrl, string? version) = await GitHubHelper.GetLatestRustdeskInfoAsync(apiUrl);
+
+            if (downloadUrl == null || version == null)
+            {
+                InstallationSettings.log?.WriteLine("Failed to get Rustdesk download information.");
+                InstallationSettings.ResetConsoleOutput();
+                return;
+            }
+
+            await Installation.DownloadAndInstallRustdeskAsync(downloadUrl, InstallationSettings.tempDir);
+
+            string rustdeskDir = Installation.GetRustdeskDirectory();
+            string runMe = Installation.GetRustdeskExecutable(rustdeskDir);
+            string? rustdeskId = Installation.GetRustdeskId(runMe, rustdeskDir);
+
+             if (rustdeskId != null)
+            {
+                Utility.ConfigureAndRunRustdesk(rustdeskId, runMe, Configuration.RustdeskCfg, Configuration.RustdeskPw);
+                Utility.SaveRustdeskInfo(rustdeskId);
+                Utility.DisplayPopup(rustdeskId, version);
+            }
+            else
+            {
+                InstallationSettings.log?.WriteLine("Rustdesk ID not found.");
+            }
+            
+            Installation.Cleanup(InstallationSettings.tempDir, InstallationSettings.rustdeskExe);
+            InstallationSettings.ResetConsoleOutput();
         }
     }
-}
 }
