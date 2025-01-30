@@ -1,4 +1,3 @@
-// Program.cs
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -20,7 +19,7 @@ namespace RustdeskSetup
                     return;
                 }
 
-                bool useStableVersion = commandLineArgs.UseStableVersion ?? CommandLineArgs.DetermineDefaultUseStableVersion();
+                bool useStableVersion = commandLineArgs.UseStableVersion;
 
                 Configuration.RustdeskCfg = string.IsNullOrEmpty(commandLineArgs.RustdeskCfg) ? Configuration.RustdeskCfg == "someConfigValue" ? string.Empty : Configuration.RustdeskCfg : commandLineArgs.RustdeskCfg;
                 Configuration.RustdeskPw = string.IsNullOrEmpty(commandLineArgs.RustdeskPw) ? Configuration.RustdeskPw == "somePassword" ? string.Empty : Configuration.RustdeskPw : commandLineArgs.RustdeskPw;
