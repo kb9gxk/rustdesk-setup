@@ -123,16 +123,24 @@ jobs:
           name: rustdesk-installer-${{ matrix.build_type }} # Match artifact name
           path: artifacts
 
+      - name: Get CST Timestamp
+        id: timestamp
+        run: |
+          $cstTime = Get-Date -Date (Get-Date).ToUniversalTime() -TimeZone "Central Standard Time"
+          $formattedTime = $cstTime.ToString("yyyy.M.dd.HHmm")
+          echo "formatted_time=$formattedTime" >> $GITHUB_OUTPUT
+        shell: pwsh
+
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.run_id }}-${{ matrix.build_type }} # Unique tag name
-          release_name: Release ${{ github.run_id }} (${{ matrix.build_type }})
+          tag_name: v${{ steps.timestamp.outputs.formatted_time }}-${{ matrix.build_type }} # Unique tag name
+          release_name: Release v${{ steps.timestamp.outputs.formatted_time }} (${{ matrix.build_type }})
           body: |
-            Rustdesk installer build ${{ github.run_id }} (${{ matrix.build_type }}).
+            Rustdesk installer build ${{ steps.timestamp.outputs.formatted_time }} (${{ matrix.build_type }}).
           draft: false
           prerelease: false
 
