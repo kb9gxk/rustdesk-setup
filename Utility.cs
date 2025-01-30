@@ -12,25 +12,30 @@ namespace RustdeskSetup
 
             try
             {
-                var process = new Process();
-                process.StartInfo.FileName = runMe;
-
-                // Strip any leading '=' from rustdeskCfg
-                if (!string.IsNullOrEmpty(rustdeskCfg) && rustdeskCfg.StartsWith("="))
+                using (var process = new Process())
                 {
-                    rustdeskCfg = rustdeskCfg.Substring(1); // Remove the leading '='
-                }
+                    process.StartInfo.FileName = runMe;
 
-                var arguments = $"--config {rustdeskCfg}";
-                if (!string.IsNullOrEmpty(rustdeskPw))
-                {
-                    arguments += $" --password {rustdeskPw}";
-                }
+                    // Strip any leading '=' from rustdeskCfg
+                    if (!string.IsNullOrEmpty(rustdeskCfg) && rustdeskCfg.StartsWith("="))
+                    {
+                        rustdeskCfg = rustdeskCfg.Substring(1); // Remove the leading '='
+                    }
 
-                process.StartInfo.Arguments = arguments;
-                process.StartInfo.UseShellExecute = false;
-                process.Start();
-                process.WaitForExit();
+                    var arguments = $"--config {rustdeskCfg}";
+                    if (!string.IsNullOrEmpty(rustdeskPw))
+                    {
+                        arguments += $" --password {rustdeskPw}";
+                    }
+
+                    process.StartInfo.Arguments = arguments;
+                    process.StartInfo.UseShellExecute = false;
+                    process.Start();
+                    if(process != null)
+                    {
+                        process.WaitForExit();
+                    }
+                }
             }
             catch (Exception ex)
             {
