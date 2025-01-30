@@ -15,7 +15,7 @@ namespace RustdeskSetup
     internal static string logFilePath = $"c:\\Rustdesk-{editionString}-Install.log";
     internal static string RustdeskInfoFilePath = Path.Combine("c:\\", RustdeskInfoFileName);
     internal static StreamWriter? log;
-    internal static string rustdeskExe; // Will be dynamically set during installation
+    internal static string? rustdeskExe; // Will be dynamically set during installation
     internal static readonly HttpClient httpClient = new HttpClient();
 
     internal static void RedirectConsoleOutput()
