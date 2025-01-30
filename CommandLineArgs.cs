@@ -4,14 +4,14 @@ using System.IO;
 
 namespace RustdeskSetup
 {
-    internal static class CommandLineArgs
+    internal class CommandLineArgs // Removed 'static'
     {
-        public static bool UseStableVersion { get; set; }
-        public static string RustdeskCfg { get; set; } = "";
-        public static string RustdeskPw { get; set; } = "";
-        public static bool ShouldShowHelp { get; set; }
+        public bool UseStableVersion { get; set; }
+        public string RustdeskCfg { get; set; } = "";
+        public string RustdeskPw { get; set; } = "";
+        public bool ShouldShowHelp { get; set; }
 
-        internal static CommandLineArgs Parse()
+        internal static CommandLineArgs Parse() // 'static' keyword remains here
         {
             var parsedArgs = new CommandLineArgs();
             bool useStableVersionSet = false;
@@ -60,7 +60,6 @@ namespace RustdeskSetup
             string executableName = Path.GetFileNameWithoutExtension(Process.GetCurrentProcess().ProcessName).ToLower();
             return !executableName.StartsWith("rustdesk-nightly");
         }
-
 
         internal static void ShowHelp()
         {
