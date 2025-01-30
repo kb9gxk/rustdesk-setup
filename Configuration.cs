@@ -4,8 +4,10 @@ namespace RustdeskSetup
 {
     internal static class Configuration
     {
-        internal static bool? useStableVersion = null; // Nullable bool
-        internal static string rustdeskCfg = "someConfigValue";
-        internal static string rustdeskPw = "somePassword";
+        private const string DefaultConfigValue = "someConfigValue";
+        private const string DefaultPasswordValue = "somePassword";
+        internal static bool? useStableVersion = null;
+        internal static string rustdeskCfg = DefaultConfigValue;
+        internal static string rustdeskPw = DefaultPasswordValue;
     }
 }
