@@ -85,7 +85,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: rustdesk-installer-jeff
+          name: rustdesk-installer-jeff # Unique artifact name
           path: publish/rustdesk-setup-jeff.exe
 
   release:
@@ -96,7 +96,7 @@ jobs:
       - name: Download Artifacts
         uses: actions/download-artifact@v4
         with:
-          name: rustdesk-installer-jeff
+          name: rustdesk-installer-jeff # Match artifact name
           path: artifacts
 
       - name: Create Release
@@ -105,8 +105,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.run_id }}
-          release_name: Release ${{ github.run_id }}
+          tag_name: ${{ github.run_id }}-jeff # Unique tag name
+          release_name: Release ${{ github.run_id }} (Jeff)
           body: |
             Rustdesk installer build ${{ github.run_id }} (Jeff).
           draft: false
