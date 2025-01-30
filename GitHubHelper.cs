@@ -2,7 +2,6 @@
 using System;
 using System.Net.Http;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace RustdeskSetup
@@ -11,7 +10,7 @@ namespace RustdeskSetup
     {
         private static readonly HttpClient httpClient = new HttpClient();
 
-        internal static (string downloadUrl, string version) GetLatestRustdeskInfo(string apiUrl)
+        internal static async Task<(string downloadUrl, string version)> GetLatestRustdeskInfoAsync(string apiUrl)
         {
             try
             {
@@ -21,7 +20,7 @@ namespace RustdeskSetup
                 response.EnsureSuccessStatusCode();
                 string json = response.Content.ReadAsStringAsync().Result;
 
-                GitHubRelease? release = JsonSerializer.Deserialize<GitHubRelease>(json);
+                GitHubRelease? release = JsonSerializer.Deserialize(json, MyJsonContext.Default.GitHubRelease);
 
                 if (release?.assets == null)
                 {
