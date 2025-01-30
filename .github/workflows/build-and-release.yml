@@ -24,23 +24,14 @@ jobs:
 
       - name: Get Chicago Timestamp
         id: timestamp
-        shell: pwsh
         run: |
-          # Get UTC time
-          $utcTime = Get-Date -Date (Get-Date).ToUniversalTime()
-
-          # Get the Chicago time zone
-          $chicagoTimeZone = [TimeZoneInfo]::FindSystemTimeZoneById("America/Chicago")
-
-          # Convert UTC time to Chicago time
-          $chicagoTime = [TimeZoneInfo]::ConvertTimeFromUtc($utcTime, $chicagoTimeZone)
-
-          # Format the time
+          $chicagoTime = Get-Date -Date (Get-Date).ToUniversalTime() -TimeZone "America/Chicago"
           $formattedTime = $chicagoTime.ToString("yyyy.M.dd.HHmm")
           $formattedTime2 = $chicagoTime.ToString("yyyy.M.dd")
           echo "formatted_time=$formattedTime" >> $GITHUB_OUTPUT
           echo "formatted_time2=$formattedTime2" >> $GITHUB_OUTPUT
           echo "formatted_time_linux=$(date -d "$($chicagoTime.ToString('yyyy-MM-dd HH:mm:ss'))" +%Y.%m.%d.%H%M)" >> $GITHUB_OUTPUT
+        shell: pwsh
 
       - name: Update Assembly and File Version
         run: |
