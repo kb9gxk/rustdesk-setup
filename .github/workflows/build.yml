@@ -36,6 +36,17 @@ jobs:
       - name: Publish project
         run: dotnet publish --configuration Release --output publish
 
+      - name: Import code signing certificate
+        uses: microsoft/code-signing@v1
+        with:
+          certificateBase64: ${{ secrets.CODE_SIGNING_CERTIFICATE }}
+          certificatePassword: ${{ secrets.CODE_SIGNING_CERTIFICATE_PASSWORD }}
+          certificatePath: codesigning.pfx
+
+      - name: Sign the executable
+        run: |
+            & "C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x64\signtool.exe" sign /f codesigning.pfx /p ${{ secrets.CODE_SIGNING_CERTIFICATE_PASSWORD }} /t http://timestamp.digicert.com /v publish\RustdeskSetup.exe
+
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
