@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace RustdeskSetup
@@ -35,12 +36,20 @@ namespace RustdeskSetup
                         WindowStyle = ProcessWindowStyle.Hidden
                     }))
                     {
-                        if (installProcess != null)
+                         if (installProcess != null)
                         {
-                            if (!await installProcess.WaitForExitAsync(TimeSpan.FromMinutes(5)))
+                            // Use a CancellationTokenSource for timeout
+                            using (var cts = new CancellationTokenSource(TimeSpan.FromMinutes(5)))
                             {
-                                InstallationSettings.log?.WriteLine("Rustdesk installation timed out.");
-                                return;
+                                try
+                                {
+                                    await installProcess.WaitForExitAsync(cts.Token);
+                                }
+                                catch (TaskCanceledException)
+                                {
+                                    InstallationSettings.log?.WriteLine("Rustdesk installation timed out.");
+                                    return;
+                                }
                             }
                         }
                     }
@@ -92,7 +101,7 @@ namespace RustdeskSetup
             {
                 using (var process = Process.Start(processStartInfo))
                 {
-                    if (process != null)
+                     if (process != null)
                     {
                         process.WaitForExit();
                         if (process.ExitCode == 0)
