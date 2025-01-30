@@ -41,14 +41,10 @@ jobs:
       - name: Publish project
         run: dotnet publish --configuration Release --output publish --no-build
 
-      - name: Rename Executable
-        run: |
-          Rename-Item "publish/RustdeskSetup.exe" "publish/rustdesk-setup.exe"
-
       - name: Verify Output File
         run: |
-          if (!(Test-Path "publish/rustdesk-setup.exe")) { 
-            Write-Host "ERROR: rustdesk-setup.exe not found in publish directory!" 
+          if (!(Test-Path "publish/RustdeskSetup.exe")) { 
+            Write-Host "ERROR: RustdeskSetup.exe not found in publish directory!" 
             exit 1 
           }
 
@@ -73,7 +69,7 @@ jobs:
         env:
           CODE_SIGNING_CERTIFICATE_PASSWORD: ${{ secrets.CODE_SIGNING_CERTIFICATE_PASSWORD }}
         run: |
-          & "C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x64\signtool.exe" sign /f codesigning.pfx /p "$env:CODE_SIGNING_CERTIFICATE_PASSWORD" /t http://timestamp.digicert.com /v publish\rustdesk-setup.exe
+          & "C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x64\signtool.exe" sign /f codesigning.pfx /p "$env:CODE_SIGNING_CERTIFICATE_PASSWORD" /t http://timestamp.digicert.com /v publish\RustdeskSetup.exe
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -111,6 +107,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: artifacts/rustdesk-setup.exe
-          asset_name: rustdesk-setup.exe
+          asset_path: artifacts/RustdeskSetup.exe
+          asset_name: RustdeskSetup.exe
           asset_content_type: application/octet-stream
