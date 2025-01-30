@@ -15,7 +15,7 @@ namespace RustdeskSetup
                 var commandLineArgs = CommandLineArgs.Parse();
 
                 // Determine initial useStableVersion based on executable name
-                bool useStableVersion = !Path.GetFileNameWithoutExtension(Environment.ProcessPath).StartsWith("rustdesk-nightly", StringComparison.OrdinalIgnoreCase);
+                bool useStableVersion = CommandLineArgs.DetermineDefaultUseStableVersion();
 
                 // Override with Configuration.cs settings
                 if (Configuration.useStableVersion.HasValue)
