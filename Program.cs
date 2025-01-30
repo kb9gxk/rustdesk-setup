@@ -53,7 +53,14 @@ namespace RustdeskSetup
                 InstallationSettings.log?.WriteLine("Rustdesk ID not found.");
             }
             
-            Installation.Cleanup(InstallationSettings.tempDir, InstallationSettings.rustdeskExe);
+            if (!string.IsNullOrEmpty(InstallationSettings.rustdeskExe))
+            {
+                Installation.Cleanup(InstallationSettings.tempDir, InstallationSettings.rustdeskExe);
+            }
+            else
+            {
+                InstallationSettings.log?.WriteLine("Skipping cleanup, rustdeskExe is null or empty.");
+            }
             InstallationSettings.ResetConsoleOutput();
         }
     }
