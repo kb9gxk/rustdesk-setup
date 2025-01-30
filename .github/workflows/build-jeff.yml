@@ -41,9 +41,15 @@ jobs:
       - name: Publish project
         run: dotnet publish --configuration Release --output publish --no-build
 
-      - name: Rename Executable
+      - name: Rename Published Executable
         run: |
-          Rename-Item "publish/RustdeskSetup.exe" "publish/rustdesk-setup-jeff.exe"
+          $exeFile = Get-ChildItem -Path "publish" -Filter "*.exe" | Select-Object -ExpandProperty Name
+          if (-not $exeFile) {
+            Write-Host "ERROR: No executable found in publish directory!"
+            exit 1
+          }
+          Move-Item -Path "publish\$exeFile" -Destination "publish\rustdesk-setup-jeff.exe" -Force
+        shell: pwsh
 
       - name: Verify Output File
         run: |
@@ -60,7 +66,8 @@ jobs:
             Write-Host "ERROR: CODE_SIGNING_CERTIFICATE secret is missing!"
             exit 1
           }
-          [System.Convert]::FromBase64String("$env:CODE_SIGNING_CERTIFICATE") | Set-Content -Path "codesigning.pfx" -Encoding Byte
+          $certBytes = [System.Convert]::FromBase64String("$env:CODE_SIGNING_CERTIFICATE")
+          [System.IO.File]::WriteAllBytes("codesigning.pfx", $certBytes)
 
       - name: Verify Certificate File
         run: |
@@ -73,13 +80,13 @@ jobs:
         env:
           CODE_SIGNING_CERTIFICATE_PASSWORD: ${{ secrets.CODE_SIGNING_CERTIFICATE_PASSWORD }}
         run: |
-          & "C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x64\signtool.exe" sign /f codesigning.pfx /p "$env:CODE_SIGNING_CERTIFICATE_PASSWORD" /t http://timestamp.digicert.com /v publish\rustdesk-setup-jeff.exe
+          & "C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x64\signtool.exe" sign /fd SHA256 /f codesigning.pfx /p "$env:CODE_SIGNING_CERTIFICATE_PASSWORD" /t http://timestamp.digicert.com /v publish\rustdesk-setup-jeff.exe
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: rustdesk-installer-jeff
-          path: publish
+          path: publish/rustdesk-setup-jeff.exe
 
   release:
     needs: build
