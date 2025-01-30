@@ -112,7 +112,6 @@ jobs:
   release:
     needs: build
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
     strategy:
       matrix:
         build_type: [default, jeff] # Match the build types from the build job
