@@ -33,7 +33,6 @@
   <ItemGroup>
     <None Remove="config.json" />
     <Content Include="icon.ico" />
-    <EmbeddedResource Include="config.json" />
     <Folder Include="Properties\" />
   </ItemGroup>
 </Project>
