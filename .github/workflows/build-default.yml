@@ -39,7 +39,7 @@ jobs:
         run: dotnet build --configuration Release --no-restore
 
       - name: Publish project
-        run: dotnet publish --configuration Release --output publish --no-build
+        run: dotnet publish --configuration Release --no-build
 
       - name: Verify Output File
         run: |
