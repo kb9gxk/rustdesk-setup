@@ -22,22 +22,26 @@ jobs:
         with:
           dotnet-version: '9.0.x'
 
-      - name: Get CST Timestamp
+      - name: Get Chicago Timestamp
         id: timestamp
         run: |
-          $cstTime = Get-Date -Date (Get-Date).ToUniversalTime() -TimeZone "Central Standard Time"
-          $formattedTime = $cstTime.ToString("yyyy.M.dd.HHmm")
+          $chicagoTime = Get-Date -Date (Get-Date).ToUniversalTime() -TimeZone "America/Chicago"
+          $formattedTime = $chicagoTime.ToString("yyyy.M.dd.HHmm")
+          $formattedTime2 = $chicagoTime.ToString("yyyy.M.dd")
           echo "formatted_time=$formattedTime" >> $GITHUB_OUTPUT
+          echo "formatted_time2=$formattedTime2" >> $GITHUB_OUTPUT
         shell: pwsh
 
       - name: Update Assembly and File Version
         run: |
           $projectFile = "rustdesk-setup.csproj"
           $version = "${{ steps.timestamp.outputs.formatted_time }}"
+          $version2 = "${{ steps.timestamp.outputs.formatted_time2 }}"
           
           $xml = [xml](Get-Content $projectFile)
           $xml.Project.PropertyGroup.AssemblyVersion = $version
           $xml.Project.PropertyGroup.FileVersion = $version
+          $xml.Project.PropertyGroup.Version = $version2
           $xml.Save($projectFile)
 
       - name: Modify Configuration.cs (Jeff)
@@ -141,11 +145,11 @@ jobs:
           name: rustdesk-installer-${{ matrix.build_type }} # Match artifact name
           path: artifacts
 
-      - name: Get CST Timestamp
+      - name: Get Chicago Timestamp
         id: timestamp
         run: |
-          $cstTime = Get-Date -Date (Get-Date).ToUniversalTime() -TimeZone "Central Standard Time"
-          $formattedTime = $cstTime.ToString("yyyy.M.dd.HHmm")
+          $chicagoTime = Get-Date -Date (Get-Date).ToUniversalTime() -TimeZone "America/Chicago"
+          $formattedTime = $chicagoTime.ToString("yyyy.M.dd.HHmm")
           echo "formatted_time=$formattedTime" >> $GITHUB_OUTPUT
         shell: pwsh
 
