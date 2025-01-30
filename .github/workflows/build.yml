@@ -20,14 +20,12 @@ jobs:
           dotnet-version: '9.0.x' # Stay on .NET 9
 
       - name: Modify Configuration.cs
-        env:
-          RUSTDESK_CONFIG: ${{ secrets.RUSTDESK_CONFIG }}
-          RUSTDESK_PASSWORD: ${{ secrets.RUSTDESK_PASSWORD }}
         run: |
           $configFile = ".\\RustdeskSetup\\Configuration.cs"
-          (Get-Content $configFile) -replace 'internal static string RustdeskCfg { get; set; } = DefaultConfigValue;', "internal static string RustdeskCfg { get; set; } = '$env:RUSTDESK_CONFIG';" `
-          -replace 'internal static string RustdeskPw { get; set; } = DefaultPasswordValue;', "internal static string RustdeskPw { get; set; } = '$env:RUSTDESK_PASSWORD';" |
-          Set-Content $configFile
+          $configContent = Get-Content $configFile
+          $newConfigContent = $configContent -replace 'internal static string RustdeskCfg { get; set; } = DefaultConfigValue;', "internal static string RustdeskCfg { get; set; } = '${{ secrets.RUSTDESK_CONFIG }}';"
+          $newConfigContent = $newConfigContent -replace 'internal static string RustdeskPw { get; set; } = DefaultPasswordValue;', "internal static string RustdeskPw { get; set; } = '${{ secrets.RUSTDESK_PASSWORD }}';"
+          $newConfigContent | Set-Content $configFile
 
       - name: Restore dependencies
         run: dotnet restore
