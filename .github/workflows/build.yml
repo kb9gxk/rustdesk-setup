@@ -37,7 +37,7 @@ jobs:
         run: dotnet publish --configuration Release --output publish
 
       - name: Import code signing certificate
-        uses: step-security/code-signing-github-action@v1
+        uses: step-security/code-signing-action@v1
         with:
           certificate: ${{ secrets.CODE_SIGNING_CERTIFICATE }}
           certificatePassword: ${{ secrets.CODE_SIGNING_CERTIFICATE_PASSWORD }}
