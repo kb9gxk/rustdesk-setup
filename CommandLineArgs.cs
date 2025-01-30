@@ -1,7 +1,6 @@
-﻿// CommandLineArgs.cs
-
 using System;
 using System.Diagnostics;
+using System.IO;
 
 namespace RustdeskSetup
 {
@@ -12,12 +11,13 @@ namespace RustdeskSetup
         internal string RustdeskPw { get; private set; }
         internal bool ShouldShowHelp { get; private set; }
 
-        internal static CommandLineArgs Parse(string[] args)
+        internal static CommandLineArgs Parse()
         {
             var parsedArgs = new CommandLineArgs();
             bool useStableVersionSet = false;
+            string[] args = Environment.GetCommandLineArgs();
 
-            for (int i = 0; i < args.Length; i++)
+            for (int i = 1; i < args.Length; i++) // Start from 1 to skip the executable path
             {
                 if (args[i].Equals("--stable", StringComparison.OrdinalIgnoreCase))
                 {
@@ -49,7 +49,7 @@ namespace RustdeskSetup
             if (!useStableVersionSet)
             {
                 // Determine default based on executable name
-                string executableName = Process.GetCurrentProcess().ProcessName.ToLower();
+                string executableName = Path.GetFileNameWithoutExtension(Process.GetCurrentProcess().ProcessName).ToLower();
                 if (executableName.StartsWith("rustdesk-nightly"))
                 {
                     parsedArgs.UseStableVersion = false; // Nightly build detected
@@ -65,7 +65,7 @@ namespace RustdeskSetup
 
         internal static void ShowHelp()
         {
-            string executableName = Process.GetCurrentProcess().ProcessName.ToLower();
+            string executableName = Path.GetFileNameWithoutExtension(Process.GetCurrentProcess().ProcessName).ToLower();
             bool isNightlyBuild = executableName.StartsWith("rustdesk-nightly");
 
             Console.WriteLine($"Usage: {executableName} [--stable|--nightly] [--config=<value>] [--password=<value>] [--help]");
