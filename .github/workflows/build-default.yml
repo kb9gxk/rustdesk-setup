@@ -9,7 +9,7 @@ on:
 jobs:
   build:
     runs-on: windows-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -17,20 +17,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: '9.0.x' # Stay on .NET 9
-
-      - name: Modify Configuration.cs (Default)
-        run: |
-          $configFile = "Configuration.cs"
-          if (Test-Path $configFile) {
-            $configContent = Get-Content $configFile
-            $newConfigContent = $configContent -replace 'internal static string RustdeskCfg { get; set; } = DefaultConfigValue;', "internal static string RustdeskCfg { get; set; } = `"`"`;"
-            $newConfigContent = $newConfigContent -replace 'internal static string RustdeskPw { get; set; } = DefaultPasswordValue;', "internal static string RustdeskPw { get; set; } = `"`"`;"
-            $newConfigContent | Set-Content $configFile
-          } else {
-            Write-Host "Configuration.cs not found!"
-            exit 1
-          }
+          dotnet-version: '9.0.x'
 
       - name: Restore dependencies
         run: dotnet restore
@@ -39,12 +26,22 @@ jobs:
         run: dotnet build --configuration Release --no-restore
 
       - name: Publish project
-        run: dotnet publish --configuration Release --no-build
+        run: dotnet publish --configuration Release --output publish --no-build
+
+      - name: Rename Published Executable
+        run: |
+          $exeFile = Get-ChildItem -Path "publish" -Filter "*.exe" | Select-Object -ExpandProperty Name
+          if (-not $exeFile) {
+            Write-Host "ERROR: No executable found in publish directory!"
+            exit 1
+          }
+          Move-Item -Path "publish\$exeFile" -Destination "publish\rustdesk-setup.exe" -Force
+        shell: pwsh
 
       - name: Verify Output File
         run: |
           if (!(Test-Path "publish/rustdesk-setup.exe")) { 
-            Write-Host "ERROR: RustdeskSetup.exe not found in publish directory!" 
+            Write-Host "ERROR: rustdesk-setup.exe not found in publish directory!"
             exit 1 
           }
 
@@ -76,7 +73,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: rustdesk-installer-default
-          path: publish
+          path: publish/rustdesk-setup.exe
 
   release:
     needs: build
