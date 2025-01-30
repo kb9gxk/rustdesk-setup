@@ -1,24 +1,33 @@
+// GitHubHelper.cs
 using System;
 using System.Net.Http;
-using Newtonsoft.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Threading.Tasks;
 
 namespace RustdeskSetup
 {
     internal static class GitHubHelper
     {
-        private static HttpClient httpClient = new HttpClient();
+        private static readonly HttpClient httpClient = new HttpClient();
 
         internal static (string downloadUrl, string version) GetLatestRustdeskInfo(string apiUrl)
         {
             try
             {
                 httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
-
+                
                 HttpResponseMessage response = httpClient.GetAsync(apiUrl).Result;
                 response.EnsureSuccessStatusCode();
                 string json = response.Content.ReadAsStringAsync().Result;
 
-                var release = JsonConvert.DeserializeObject<GitHubRelease>(json);
+                GitHubRelease? release = JsonSerializer.Deserialize<GitHubRelease>(json);
+
+                if (release?.assets == null)
+                {
+                    InstallationSettings.log?.WriteLine($"No {InstallationSettings.editionString} release found in GitHub response.");
+                    return (null, null);
+                }
 
                 foreach (var asset in release.assets)
                 {
