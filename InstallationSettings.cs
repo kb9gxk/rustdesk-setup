@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Net.Http;
 
 namespace RustdeskSetup
 {
@@ -7,14 +8,14 @@ namespace RustdeskSetup
     {
         internal static string tempDir = Path.GetTempPath();
         internal static string programFilesDir = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
-        internal static string editionString = Configuration.useStableVersion ? "Stable" : "Nightly";
+        internal static string editionString = Configuration.useStableVersion.HasValue && Configuration.useStableVersion.Value ? "Stable" : "Nightly";
         internal static string githubStableApiUrl = "https://api.github.com/repos/rustdesk/rustdesk/releases/latest";
         internal static string githubNightlyApiUrl = "https://api.github.com/repos/rustdesk/rustdesk/releases/tags/nightly";
         internal static string logFilePath = $"c:\\Rustdesk-{editionString}-Install.log";
         internal static StreamWriter? log;
         internal static string rustdeskExe; // Will be dynamically set during installation
         internal static string rustdeskCfg; // Ensure these are accessible
-        internal static HttpClient httpClient = new HttpClient();
+        internal static readonly HttpClient httpClient = new HttpClient();
 
         internal static void RedirectConsoleOutput()
         {
