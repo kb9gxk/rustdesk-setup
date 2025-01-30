@@ -1,4 +1,11 @@
 // Program.cs
+// Program.cs
+using System;
+using System.Diagnostics;
+namespace RustdeskSetup
+{
+    internal class Program
+    {
 static async Task Main(string[] args)
 {
     Logging.RedirectConsoleOutput();
