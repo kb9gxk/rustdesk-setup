@@ -85,7 +85,7 @@ namespace RustdeskSetup
             }
         }
 
-        internal static string GetRustdeskId(string runMe, string rustdeskDir)
+        internal static string? GetRustdeskId(string runMe, string rustdeskDir)
         {
             InstallationSettings.log?.WriteLine("Getting Rustdesk ID...");
             var processStartInfo = new ProcessStartInfo
