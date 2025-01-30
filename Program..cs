@@ -7,16 +7,15 @@ namespace RustdeskSetup
 {
     internal class Program
     {
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
             Logging.RedirectConsoleOutput();
-
             try
             {
                 var commandLineArgs = CommandLineArgs.Parse(args);
 
                 // Determine initial useStableVersion based on executable name
-                bool useStableVersion = !Process.GetCurrentProcess().ProcessName.StartsWith("rustdesk-nightly", StringComparison.OrdinalIgnoreCase);
+                bool useStableVersion = !Environment.ProcessPath.StartsWith("rustdesk-nightly", StringComparison.OrdinalIgnoreCase);
 
                 // Override with Configuration.cs settings
                 if (Configuration.useStableVersion.HasValue)
@@ -27,7 +26,7 @@ namespace RustdeskSetup
                 // Override with command line arguments
                 if (commandLineArgs.UseStableVersion.HasValue)
                 {
-                    useStableVersion = commandLineArgs.UseStableVersion.Value;
+                   useStableVersion = commandLineArgs.UseStableVersion.Value;
                 }
 
                 // Handle rustdeskCfg default value scenario
@@ -50,7 +49,7 @@ namespace RustdeskSetup
                     Configuration.rustdeskPw = commandLineArgs.RustdeskPw;
                 }
 
-                Initialize(useStableVersion);
+                await InitializeAsync(useStableVersion);
             }
             catch (Exception ex)
             {
@@ -62,6 +61,13 @@ namespace RustdeskSetup
             }
         }
 
+        static async Task InitializeAsync(bool useStableVersion)
+        {
+            // ...
+            (string rustdeskUrl, string version) = await GitHubHelper.GetLatestRustdeskInfoAsync(githubApiUrl);
+            // ...
+        }
+        
         static void Initialize(bool useStableVersion)
         {
             InstallationSettings.HideWindow();
