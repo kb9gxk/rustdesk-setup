@@ -22,6 +22,24 @@ jobs:
         with:
           dotnet-version: '9.0.x'
 
+      - name: Get CST Timestamp
+        id: timestamp
+        run: |
+          $cstTime = Get-Date -Date (Get-Date).ToUniversalTime() -TimeZone "Central Standard Time"
+          $formattedTime = $cstTime.ToString("yyyy.M.dd.HHmm")
+          echo "formatted_time=$formattedTime" >> $GITHUB_OUTPUT
+        shell: pwsh
+
+      - name: Update Assembly and File Version
+        run: |
+          $projectFile = "rustdesk-setup.csproj"
+          $version = "${{ steps.timestamp.outputs.formatted_time }}"
+          
+          $xml = [xml](Get-Content $projectFile)
+          $xml.Project.PropertyGroup.AssemblyVersion = $version
+          $xml.Project.PropertyGroup.FileVersion = $version
+          $xml.Save($projectFile)
+
       - name: Modify Configuration.cs (Jeff)
         if: matrix.build_type == 'jeff'
         run: |
