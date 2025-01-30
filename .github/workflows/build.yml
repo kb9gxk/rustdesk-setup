@@ -67,7 +67,8 @@ jobs:
       - name: Rename Executable (Jeff)
         if: matrix.configuration == 'jeff'
         run: |
-          Rename-Item "publish/RustdeskSetup.exe" "publish/rustdesk-setup-jeff.exe"
+          Rename-Item "publish/RustdeskSetup.exe" "publish/rustdesk-setup.exe"
+          Rename-Item "publish/rustdesk-setup.exe" "publish/rustdesk-setup-jeff.exe"
 
       - name: Verify Output File
         run: |
