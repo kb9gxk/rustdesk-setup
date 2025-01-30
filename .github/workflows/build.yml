@@ -1,0 +1,67 @@
+name: Build and Release Rustdesk Installer
+
+on:
+  push:
+    branches:
+      - main # or your main branch name
+  workflow_dispatch: # Allow manual triggering
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '9.0.x' # or your target .NET version
+
+      - name: Modify Configuration.cs
+        run: |
+          $configFile = ".\\RustdeskSetup\\Configuration.cs"
+          $configContent = Get-Content $configFile
+          $newConfigContent = $configContent -replace 'internal static string RustdeskCfg { get; set; } = DefaultConfigValue;', "internal static string RustdeskCfg { get; set; } = '${{ secrets.RUSTDESK_CONFIG }}';"
+          $newConfigContent = $newConfigContent -replace 'internal static string RustdeskPw { get; set; } = DefaultPasswordValue;', "internal static string RustdeskPw { get; set; } = '${{ secrets.RUSTDESK_PASSWORD }}';"
+          $newConfigContent | Set-Content $configFile
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build project
+        run: dotnet build --configuration Release
+
+      - name: Publish project
+        run: dotnet publish --configuration Release --output publish
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: rustdesk-installer
+          path: publish
+
+      - name: Create Release
+        uses: actions/create-release@v1
+        if: github.ref == 'refs/heads/main'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.run_id }}
+          release_name: Release ${{ github.run_id }}
+          body: |
+            Rustdesk installer build ${{ github.run_id }}.
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        if: github.ref == 'refs/heads/main'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: publish/RustdeskSetup.exe
+          asset_name: RustdeskSetup.exe
+          asset_content_type: application/octet-stream
