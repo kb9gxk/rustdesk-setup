@@ -37,10 +37,22 @@ namespace RustdeskSetup
                 {
                     if (installProcess != null)
                     {
-                        await installProcess.WaitForExitAsync();
+                        if (!await installProcess.WaitForExitAsync(TimeSpan.FromMinutes(5)))
+                        {
+                            InstallationSettings.log?.WriteLine("Rustdesk installation timed out.");
+                            return;
+                        }
                     }
                 }
             }
+        }
+        catch (HttpRequestException ex)
+        {
+            InstallationSettings.log?.WriteLine($"Error downloading {InstallationSettings.editionString} Rustdesk: {ex.Message}");
+        }
+        catch (IOException ex)
+        {
+            InstallationSettings.log?.WriteLine($"Error writing file: {ex.Message}");
         }
         catch (Exception ex)
         {
@@ -52,7 +64,11 @@ namespace RustdeskSetup
 
         try
         {
-            File.Delete(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonDesktopDirectory), "RustDesk.lnk"));
+            string shortcutPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonDesktopDirectory), "RustDesk.lnk");
+            if (File.Exists(shortcutPath))
+            {
+                File.Delete(shortcutPath);
+            }
         }
         catch (Exception ex)
         {
@@ -60,17 +76,7 @@ namespace RustdeskSetup
         }
     }
 
-    internal static string GetRustdeskDirectory()
-    {
-        return Path.Combine(InstallationSettings.programFilesDir, "RustDesk");
-    }
-
-    internal static string GetRustdeskExecutable(string rustdeskDir)
-    {
-        return Path.Combine(rustdeskDir, InstallationSettings.rustdeskExe);
-    }
-
-    internal static string GetRustdeskId(string runMe, string rustdeskDir)
+     internal static string GetRustdeskId(string runMe, string rustdeskDir)
     {
         InstallationSettings.log?.WriteLine("Getting Rustdesk ID...");
         var processStartInfo = new ProcessStartInfo
@@ -88,7 +94,16 @@ namespace RustdeskSetup
             {
                 if (process != null)
                 {
-                    return process.StandardOutput.ReadToEnd().Trim();
+                    process.WaitForExit();
+                    if (process.ExitCode == 0)
+                    {
+                        return process.StandardOutput.ReadToEnd().Trim();
+                    }
+                    else
+                    {
+                        InstallationSettings.log?.WriteLine($"Error getting Rustdesk ID: Process exited with code {process.ExitCode}");
+                        return null;
+                    }
                 }
             }
         }
@@ -99,12 +114,16 @@ namespace RustdeskSetup
         }
         return null;
     }
-
+    
     internal static void Cleanup(string tempDir, string exeName)
     {
         try
         {
-            File.Delete(Path.Combine(tempDir, exeName));
+            string exePath = Path.Combine(tempDir, exeName);
+            if (File.Exists(exePath))
+            {
+                File.Delete(exePath);
+            }
         }
         catch (Exception ex)
         {
