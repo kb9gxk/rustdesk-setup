@@ -1,58 +1,39 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-	<OutputType>Exe</OutputType>
-	<TargetFramework>net9.0</TargetFramework>
-	<RootNamespace>RustdeskSetup</RootNamespace>
-	<ImplicitUsings>enable</ImplicitUsings>
-	<Nullable>enable</Nullable>
-	<ApplicationIcon>icon.ico</ApplicationIcon>
-	<StartupObject></StartupObject>
-	<SelfContained>True</SelfContained>
-	<PublishAot>True</PublishAot>
-	<AssemblyName>rustdesk-setup</AssemblyName>
-	<Company>Jeff Parrish</Company>
-	<ProductName>JP Custom Rustdesk Installer</ProductName>
-	<Description>JP Custom Rustdesk Installer</Description>
-	<Copyright>© 2023-2025</Copyright>
-	<AssemblyVersion>2025.1.30.1010</AssemblyVersion>
-	<FileVersion>2024.1.30.1010</FileVersion>
-	<ApplicationManifest>app.manifest</ApplicationManifest>
-	<Authors>Jeff Parrish</Authors>
-	<NeutralLanguage>en-US</NeutralLanguage>
-	<SignAssembly>False</SignAssembly>
-	<Product>JP Custom Rustdesk Installer</Product>
-	<Version>2025.1.30</Version>
-	<Platforms>AnyCPU;x64</Platforms>
-	<PublishTrimmed>True</PublishTrimmed>
-	<RuntimeIdentifier>win-x64</RuntimeIdentifier>
-	<TrimMode>full</TrimMode>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <RootNamespace>RustdeskSetup</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <ApplicationIcon>icon.ico</ApplicationIcon>
+    <SelfContained>true</SelfContained>
+    <PublishAot>true</PublishAot>
+    <AssemblyName>rustdesk-setup</AssemblyName>
+    <Company>Jeff Parrish</Company>
+    <ProductName>JP Custom Rustdesk Installer</ProductName>
+    <Description>JP Custom Rustdesk Installer</Description>
+    <Copyright>© 2023-2025</Copyright>
+    <AssemblyVersion>2025.1.30.1010</AssemblyVersion>
+    <FileVersion>2024.1.30.1010</FileVersion>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <Authors>Jeff Parrish</Authors>
+    <NeutralLanguage>en-US</NeutralLanguage>
+    <SignAssembly>false</SignAssembly>
+    <Version>2025.1.30</Version>
+    <Platforms>AnyCPU;x64</Platforms>
+    <PublishTrimmed>true</PublishTrimmed>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <TrimMode>full</TrimMode>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(InstallationSettings)|$(Platform)'=='Debug|AnyCPU'">
+
+  <PropertyGroup Condition="'$(Configuration)'=='Release' or '$(Configuration)'=='Debug'">
     <DebugType>none</DebugType>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(InstallationSettings)|$(Platform)'=='Debug|x64'">
-    <DebugType>none</DebugType>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(InstallationSettings)|$(Platform)'=='Release|AnyCPU'">
-    <DebugType>none</DebugType>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(InstallationSettings)|$(Platform)'=='Release|x64'">
-    <DebugType>none</DebugType>
-  </PropertyGroup>
+
   <ItemGroup>
     <None Remove="config.json" />
-  </ItemGroup>
-
-  <ItemGroup>
-	<Content Include="icon.ico" />
-  </ItemGroup>
-
-  <ItemGroup>
+    <Content Include="icon.ico" />
     <EmbeddedResource Include="config.json" />
+    <Folder Include="Properties\" />
   </ItemGroup>
-
-  <ItemGroup>
-	<Folder Include="Properties\" />
-  </ItemGroup>
-
 </Project>
