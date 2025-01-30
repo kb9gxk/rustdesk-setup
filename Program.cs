@@ -45,7 +45,7 @@ namespace RustdeskSetup
             InstallationSettings.editionString = editionString;
             InstallationSettings.logFilePath = $"c:\\Rustdesk-{editionString}-Install.log";
 
-            (string rustdeskUrl, string version) = await GitHubHelper.GetLatestRustdeskInfoAsync(githubApiUrl);
+            (string? rustdeskUrl, string? version) = await GitHubHelper.GetLatestRustdeskInfoAsync(githubApiUrl);
 
             if (string.IsNullOrEmpty(rustdeskUrl) || string.IsNullOrEmpty(version))
             {
@@ -60,15 +60,18 @@ namespace RustdeskSetup
 
             string rustdeskDir = Installation.GetRustdeskDirectory();
             string runMe = Installation.GetRustdeskExecutable(rustdeskDir);
-            string rustdeskId = Installation.GetRustdeskId(runMe, rustdeskDir);
+            string? rustdeskId = Installation.GetRustdeskId(runMe, rustdeskDir);
 
-            if (!string.IsNullOrEmpty(Configuration.RustdeskCfg))
+            if (!string.IsNullOrEmpty(Configuration.RustdeskCfg) && !string.IsNullOrEmpty(rustdeskId))
             {
                 Utility.ConfigureAndRunRustdesk(rustdeskId, runMe, Configuration.RustdeskCfg, Configuration.RustdeskPw);
             }
 
-            Utility.SaveRustdeskInfo(rustdeskId);
-            Utility.DisplayPopup(rustdeskId, version);
+            if(!string.IsNullOrEmpty(rustdeskId))
+            {
+                Utility.SaveRustdeskInfo(rustdeskId);
+                Utility.DisplayPopup(rustdeskId, version);
+            }
 
             Installation.Cleanup(InstallationSettings.tempDir, InstallationSettings.rustdeskExe);
         }
