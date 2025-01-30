@@ -1,45 +1,54 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace RustdeskSetup
 {
     internal static class Installation
     {
-        internal static void DownloadAndInstallRustdesk(string url, string tempDir)
+        internal static async void DownloadAndInstallRustdesk(string url, string tempDir)
         {
             InstallationSettings.log?.WriteLine($"Downloading latest {InstallationSettings.editionString} Rustdesk build...");
 
             try
             {
-                var response = InstallationSettings.httpClient.GetAsync(url).Result;
-                response.EnsureSuccessStatusCode();
-
-                string fileName = Path.GetFileName(new Uri(url).LocalPath);
-                string exePath = Path.Combine(tempDir, fileName);
-
-                using (var fileStream = File.OpenWrite(exePath))
+                using (var response = await InstallationSettings.httpClient.GetAsync(url))
                 {
-                    response.Content.CopyToAsync(fileStream).Wait();
+                    response.EnsureSuccessStatusCode();
+
+                    string fileName = Path.GetFileName(new Uri(url).LocalPath);
+                    string exePath = Path.Combine(tempDir, fileName);
+
+                    using (var fileStream = File.OpenWrite(exePath))
+                    {
+                        await response.Content.CopyToAsync(fileStream);
+                    }
+
+                    InstallationSettings.rustdeskExe = fileName;
+
+                    using (var installProcess = Process.Start(new ProcessStartInfo
+                    {
+                        FileName = exePath,
+                        Arguments = "--silent-install",
+                        CreateNoWindow = true,
+                        WindowStyle = ProcessWindowStyle.Hidden
+                    }))
+                    {
+                        if (installProcess != null)
+                        {
+                            await installProcess.WaitForExitAsync();
+                        }
+                    }
                 }
-
-                InstallationSettings.rustdeskExe = fileName;
-
-                var installProcess = Process.Start(new ProcessStartInfo
-                {
-                    FileName = exePath,
-                    Arguments = "--silent-install",
-                    CreateNoWindow = true,
-                    WindowStyle = ProcessWindowStyle.Hidden
-                });
-                installProcess?.WaitForExit();
             }
             catch (Exception ex)
             {
                 InstallationSettings.log?.WriteLine($"Error downloading or installing {InstallationSettings.editionString} Rustdesk: {ex.Message}");
             }
 
-            System.Threading.Thread.Sleep(20000); // Wait for 20 seconds
+            // Wait for 20 seconds
+            await Task.Delay(20000);
 
             try
             {
@@ -77,7 +86,10 @@ namespace RustdeskSetup
             {
                 using (var process = Process.Start(processStartInfo))
                 {
-                    return process?.StandardOutput.ReadToEnd().Trim();
+                    if (process != null)
+                    {
+                        return process.StandardOutput.ReadToEnd().Trim();
+                    }
                 }
             }
             catch (Exception ex)
@@ -85,6 +97,7 @@ namespace RustdeskSetup
                 InstallationSettings.log?.WriteLine($"Error getting Rustdesk ID: {ex.Message}");
                 return null;
             }
+            return null;
         }
 
         internal static void Cleanup(string tempDir, string exeName)
