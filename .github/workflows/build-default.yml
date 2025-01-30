@@ -43,7 +43,7 @@ jobs:
 
       - name: Verify Output File
         run: |
-          if (!(Test-Path "publish/RustdeskSetup.exe")) { 
+          if (!(Test-Path "publish/rustdesk-setup.exe")) { 
             Write-Host "ERROR: RustdeskSetup.exe not found in publish directory!" 
             exit 1 
           }
@@ -69,7 +69,7 @@ jobs:
         env:
           CODE_SIGNING_CERTIFICATE_PASSWORD: ${{ secrets.CODE_SIGNING_CERTIFICATE_PASSWORD }}
         run: |
-          & "C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x64\signtool.exe" sign /f codesigning.pfx /p "$env:CODE_SIGNING_CERTIFICATE_PASSWORD" /t http://timestamp.digicert.com /v publish\RustdeskSetup.exe
+          & "C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x64\signtool.exe" sign /f codesigning.pfx /p "$env:CODE_SIGNING_CERTIFICATE_PASSWORD" /t http://timestamp.digicert.com /v publish\rustdesk-setup.exe
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
