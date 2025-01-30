@@ -3,6 +3,10 @@ using System.Text.Json.Serialization;
 
 namespace RustdeskSetup
 {
+    [JsonSerializable(typeof(GitHubRelease))]
+    public partial class MyJsonContext : JsonSerializerContext
+    {
+    }
     public class GitHubRelease
     {
         [JsonPropertyName("tag_name")]
