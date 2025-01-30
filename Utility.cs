@@ -39,15 +39,14 @@ namespace RustdeskSetup
             InstallationSettings.log?.WriteLine($"Error configuring or starting Rustdesk: {ex.Message}");
         }
     }
-
-
+    
     internal static void SaveRustdeskInfo(string rustdeskId)
     {
         try
         {
             InstallationSettings.log?.WriteLine($"Computer: {Environment.MachineName}");
             InstallationSettings.log?.WriteLine($"ID: {rustdeskId}");
-            File.WriteAllText($"c:\\rustdesk.txt", $"Computer: {Environment.MachineName}\nID: {rustdeskId}");
+            File.WriteAllText(InstallationSettings.RustdeskInfoFilePath, $"Computer: {Environment.MachineName}\nID: {rustdeskId}");
         }
         catch (Exception ex)
         {
@@ -65,24 +64,6 @@ namespace RustdeskSetup
         catch (Exception ex)
         {
             InstallationSettings.log?.WriteLine($"Error displaying popup: {ex.Message}");
-        }
-    }
-
-    internal static string ReadEmbeddedResource(string resourceName)
-    {
-        var assembly = System.Reflection.Assembly.GetExecutingAssembly();
-        using (Stream stream = assembly.GetManifestResourceStream(resourceName))
-        {
-            if (stream == null)
-            {
-                InstallationSettings.log?.WriteLine($"Embedded resource '{resourceName}' not found.");
-                return string.Empty;
-            }
-
-            using (StreamReader reader = new StreamReader(stream))
-            {
-                return reader.ReadToEnd();
-            }
         }
     }
 }
