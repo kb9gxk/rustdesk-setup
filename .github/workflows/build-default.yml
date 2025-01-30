@@ -1,0 +1,116 @@
+name: Build and Release Rustdesk Installer (Default)
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch: # Allow manual triggering
+
+jobs:
+  build:
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '9.0.x' # Stay on .NET 9
+
+      - name: Modify Configuration.cs (Default)
+        run: |
+          $configFile = "Configuration.cs"
+          if (Test-Path $configFile) {
+            $configContent = Get-Content $configFile
+            $newConfigContent = $configContent -replace 'internal static string RustdeskCfg { get; set; } = DefaultConfigValue;', "internal static string RustdeskCfg { get; set; } = `"`"`;"
+            $newConfigContent = $newConfigContent -replace 'internal static string RustdeskPw { get; set; } = DefaultPasswordValue;', "internal static string RustdeskPw { get; set; } = `"`"`;"
+            $newConfigContent | Set-Content $configFile
+          } else {
+            Write-Host "Configuration.cs not found!"
+            exit 1
+          }
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build project
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Publish project
+        run: dotnet publish --configuration Release --output publish --no-build
+
+      - name: Rename Executable
+        run: |
+          Rename-Item "publish/RustdeskSetup.exe" "publish/rustdesk-setup.exe"
+
+      - name: Verify Output File
+        run: |
+          if (!(Test-Path "publish/rustdesk-setup.exe")) { 
+            Write-Host "ERROR: rustdesk-setup.exe not found in publish directory!" 
+            exit 1 
+          }
+
+      - name: Decode and Save PFX Certificate
+        env:
+          CODE_SIGNING_CERTIFICATE: ${{ secrets.CODE_SIGNING_CERTIFICATE }}
+        run: |
+          if ("$env:CODE_SIGNING_CERTIFICATE" -eq "") {
+            Write-Host "ERROR: CODE_SIGNING_CERTIFICATE secret is missing!"
+            exit 1
+          }
+          [System.Convert]::FromBase64String("$env:CODE_SIGNING_CERTIFICATE") | Set-Content -Path "codesigning.pfx" -Encoding Byte
+
+      - name: Verify Certificate File
+        run: |
+          if (!(Test-Path "codesigning.pfx")) { 
+            Write-Host "ERROR: Certificate file not found!" 
+            exit 1 
+          }
+
+      - name: Sign the Executable
+        env:
+          CODE_SIGNING_CERTIFICATE_PASSWORD: ${{ secrets.CODE_SIGNING_CERTIFICATE_PASSWORD }}
+        run: |
+          & "C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x64\signtool.exe" sign /f codesigning.pfx /p "$env:CODE_SIGNING_CERTIFICATE_PASSWORD" /t http://timestamp.digicert.com /v publish\rustdesk-setup.exe
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rustdesk-installer-default
+          path: publish
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: rustdesk-installer-default
+          path: artifacts
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.run_id }}
+          release_name: Release ${{ github.run_id }}
+          body: |
+            Rustdesk installer build ${{ github.run_id }} (Default).
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: artifacts/rustdesk-setup.exe
+          asset_name: rustdesk-setup.exe
+          asset_content_type: application/octet-stream
