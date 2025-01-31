@@ -113,6 +113,7 @@ jobs:
           Move-Item -Path $exeFile -Destination $newExeName -Force
         shell: pwsh
       - name: Decode and Save Code Signing Certificate
+        id: cert
         env:
           CODE_SIGNING_CERTIFICATE: '${{ secrets.CODE_SIGNING_CERTIFICATE }}'
         run: >
@@ -122,6 +123,11 @@ jobs:
           Set-Content -Path "codesigning.pfx" -Value $certBytes -Encoding
           ([System.Text.Encoding]::Default)
         shell: pwsh
+      - name: Upload Code Signing Certificate Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: code-signing-cert
+          path: codesigning.pfx
       - name: Debug Code Signing Certificate
         run: |
           if (Test-Path "codesigning.pfx") {
@@ -197,6 +203,11 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: 'rustdesk-installer-${{ matrix.build_type }}'
+          path: artifacts
+      - name: Download Code Signing Certificate Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: code-signing-cert
           path: artifacts
       - name: Create Release
         id: create_release
