@@ -95,7 +95,7 @@ jobs:
       - name: Decode and Save Code Signing Certificate
         if: matrix.build_type == 'default'
         run: |
-          echo "${{ env:CODE_SIGNING_CERTIFICATE }}" | base64 -d > artifacts/code-signing.pfx
+          echo "${{ env.CODE_SIGNING_CERTIFICATE }}" | base64 -d > artifacts/code-signing.pfx
           echo "Certificate decoded successfully"
 
       - name: Check if pfx file exists
@@ -132,7 +132,7 @@ jobs:
           Write-Host "Attempting to sign the executables..."
           Get-ChildItem -Path "artifacts" -Filter "*.exe" | ForEach-Object {
             Write-Host "Signing: $($_.FullName)"
-            & "${{ env.SIGNSUCCESS_PATH }}" sign /fd SHA256 /f "artifacts/code-signing.pfx" /p "${{ env:CODE_SIGNING_CERTIFICATE_PASSWORD }}" /t http://timestamp.digicert.com /v $_.FullName
+            & "${{ env.SIGNSUCCESS_PATH }}" sign /fd SHA256 /f "artifacts/code-signing.pfx" /p "${{ env.CODE_SIGNING_CERTIFICATE_PASSWORD }}" /t http://timestamp.digicert.com /v $_.FullName
           }
 
       - name: Upload Signed Installers
