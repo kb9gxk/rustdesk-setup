@@ -27,7 +27,7 @@ jobs:
       - name: Decode and Save Code Signing Certificate
         shell: bash
         run: |
-          echo "${{ inputs.CODE_SIGNING_CERTIFICATE }}" | base64 -d > artifacts/code-signing.pfx
+          echo "${{ env.CODE_SIGNING_CERTIFICATE }}" | base64 -d > artifacts/code-signing.pfx
           echo "Certificate decoded successfully"
 
       - name: Check if pfx file exists
@@ -60,7 +60,7 @@ jobs:
 
       - name: Sign Executables
         env:
-          CODE_SIGNING_CERTIFICATE_PASSWORD: '${{ inputs.CODE_SIGNING_CERTIFICATE_PASSWORD }}'
+          CODE_SIGNING_CERTIFICATE_PASSWORD: '${{ env.CODE_SIGNING_CERTIFICATE_PASSWORD }}'
         shell: pwsh
         run: |
           Write-Host "Attempting to sign the executables..."
