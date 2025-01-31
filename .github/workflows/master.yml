@@ -93,6 +93,11 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore "rustdesk-setup.csproj"
 
+      - name: Clean up previous build artifacts
+        run: |
+          Remove-Item -Recurse -Force bin obj
+        shell: pwsh
+        
       - name: Build & Publish (Default)
         run: |
           dotnet publish "rustdesk-setup.csproj" --configuration Release --output "publish" --no-restore --no-cache
@@ -124,8 +129,12 @@ jobs:
 
       - name: Modify Configuration.cs (Jeff)
         run: |
-          (Get-Content "Configuration.cs") -replace 'private const string DefaultConfigValue = .*;', "private const string DefaultConfigValue = `"$env:RUSTDESK_CONFIG`";" |
+          # Replace DefaultConfigValue with the value from the environment variable RUSTDESK_CONFIG
+          (Get-Content "Configuration.cs") -replace 'private const string DefaultConfigValue = "";', "private const string DefaultConfigValue = `"$env:RUSTDESK_CONFIG`";" |
           Set-Content "Configuration.cs"
+          # Replace DefaultPasswordValue with the value from the environment variable RUSTDESK_PASSWORD
+          (Get-Content "Configuration.cs") -replace 'private const string DefaultPasswordValue = "";', "private const string DefaultPasswordValue = `"$env:RUSTDESK_PASSWORD`";" |
+          Set-Content "Configuration.cs"          
           Get-Content "Configuration.cs"
         shell: pwsh
 
@@ -173,6 +182,11 @@ jobs:
 
       - name: Restore dependencies
         run: dotnet restore "rustdesk-setup.csproj"
+
+      - name: Clean up previous build artifacts
+        run: |
+          Remove-Item -Recurse -Force bin obj
+        shell: pwsh
 
       - name: Build & Publish (Jeff)
         run: |
