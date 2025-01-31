@@ -1,4 +1,4 @@
-name: Prepare Environment
+name: 1 - Prepare Environment
 
 on:
   workflow_call:  # Only runs when called by another workflow
