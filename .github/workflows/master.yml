@@ -107,11 +107,15 @@ jobs:
 
       - name: Modify Configuration.cs (Jeff)
         run: |
-          (Get-Content "Configuration.cs") ` 
-            -replace 'private const string DefaultConfigValue = "";', "private const string DefaultConfigValue = `"$env:RUSTDESK_CONFIG`";" ` 
-            -replace 'private const string DefaultPasswordValue = "";', "private const string DefaultPasswordValue = `"$env:RUSTDESK_PASSWORD`";" ` 
-            | Set-Content "Configuration.cs"          
-          Get-Content "Configuration.cs"
+      - name: Modify Configuration.cs (Jeff)
+        run: |
+          (Get-Content "Configuration.cs") | 
+            ForEach-Object { 
+              $_ -replace 'private const string DefaultConfigValue = "";', "private const string DefaultConfigValue = `"$env:RUSTDESK_CONFIG`";"
+            } | 
+            ForEach-Object { 
+              $_ -replace 'private const string DefaultPasswordValue = "";', "private const string DefaultPasswordValue = `"$env:RUSTDESK_PASSWORD`";"
+            } | Set-Content "Configuration.cs"
         shell: pwsh
 
       - name: Debug - Display .csproj Content
