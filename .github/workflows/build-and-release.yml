@@ -133,8 +133,6 @@ jobs:
           }
         shell: pwsh
       - name: Debug Code Signing Password
-      env:
-          CODE_SIGNING_CERTIFICATE: '${{ secrets.CODE_SIGNING_CERTIFICATE_PASSWORD }}'
         run: |
           if ($env:CODE_SIGNING_CERTIFICATE_PASSWORD) {
             Write-Host "Password is set."
