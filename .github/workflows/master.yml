@@ -66,7 +66,7 @@ jobs:
           if ($xml.Project.PropertyGroup -eq $null) {
             $xml.Project.AppendChild($xml.CreateElement("PropertyGroup")) | Out-Null
           }
-
+      
           # Set AssemblyVersion
           $assemblyVersionElement = $xml.Project.PropertyGroup.AssemblyVersion
           if ($assemblyVersionElement -eq $null) {
@@ -74,7 +74,7 @@ jobs:
               $xml.Project.PropertyGroup.AppendChild($assemblyVersionElement) | Out-Null
           }
           $assemblyVersionElement.InnerText = $version
-
+      
           # Set FileVersion
           $fileVersionElement = $xml.Project.PropertyGroup.FileVersion
           if ($fileVersionElement -eq $null) {
@@ -82,14 +82,14 @@ jobs:
               $xml.Project.PropertyGroup.AppendChild($fileVersionElement) | Out-Null
           }
           $fileVersionElement.InnerText = $version
-
-          # Set FileVersion
-          $fileVersionElement = $xml.Project.PropertyGroup.FileVersion
-          if ($fileVersionElement -eq $null) {
-              $fileVersionElement = $xml.CreateElement("Version")
-              $xml.Project.PropertyGroup.AppendChild($fileVersionElement) | Out-Null
+      
+          # Set Version
+          $versionElement = $xml.Project.PropertyGroup.Version
+          if ($versionElement -eq $null) {
+              $versionElement = $xml.CreateElement("Version")
+              $xml.Project.PropertyGroup.AppendChild($versionElement) | Out-Null
           }
-          $fileVersionElement.InnerText = $version2
+          $versionElement.InnerText = $version2
           
           $xml.Save($projectFile)
         shell: pwsh        
