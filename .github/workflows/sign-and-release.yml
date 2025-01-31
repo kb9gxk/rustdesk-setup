@@ -12,29 +12,41 @@ jobs:
   sign:
     runs-on: windows-latest
     steps:
+      # Download Artifacts (Default Build)
       - name: Download Artifacts (Default Build)
         uses: actions/download-artifact@v4
         with:
           name: 'rustdesk-installer-default'
           path: artifacts
 
+      # Download Artifacts (Jeff Build)
       - name: Download Artifacts (Jeff Build)
         uses: actions/download-artifact@v4
         with:
           name: 'rustdesk-installer-jeff'
           path: artifacts
 
+      # Debugging: List the files in the artifacts directory to verify the .exe files are available
+      - name: List files in artifacts
+        run: dir artifacts
+
+      # Decode and Save Code Signing Certificate (from secrets)
       - name: Decode and Save Code Signing Certificate
         shell: bash
         run: |
           echo "${{ secrets.CODE_SIGNING_CERTIFICATE }}" | base64 -d > artifacts/code-signing.pfx
 
+      # Debugging: Verify the certificate file exists
+      - name: Verify decoded certificate
+        run: dir artifacts
+
+      # Locate signtool.exe
       - name: Locate signtool.exe
         id: find_signtool
         shell: pwsh
         run: |
-          $signtoolPath = Get-ChildItem -Path "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter signtool.exe |
-            Where-Object { $_.FullName -match "x64" } |
+          $signtoolPath = Get-ChildItem -Path "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter signtool.exe | 
+            Where-Object { $_.FullName -match "x64" } | 
             Select-Object -First 1 -ExpandProperty FullName
 
           if (-not $signtoolPath) {
@@ -44,15 +56,25 @@ jobs:
 
           echo "SIGNSUCCESS_PATH=$signtoolPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8
 
+      # Debugging: Print environment variable for signtool path
+      - name: Print signtool path
+        run: echo "SIGNSUCCESS_PATH=$env:SIGNSUCCESS_PATH"
+
+      # Sign Executables
       - name: Sign Executables
         env:
           CODE_SIGNING_CERTIFICATE_PASSWORD: '${{ secrets.CODE_SIGNING_CERTIFICATE_PASSWORD }}'
         shell: pwsh
         run: |
+          # Verify password is passed correctly
+          Write-Host "Signing with certificate password: $env:CODE_SIGNING_CERTIFICATE_PASSWORD"
+          
           Get-ChildItem -Path "artifacts" -Filter "*.exe" | ForEach-Object {
+            Write-Host "Signing: $_.FullName"
             & "${{ env.SIGNSUCCESS_PATH }}" sign /fd SHA256 /f "artifacts/code-signing.pfx" /p "$env:CODE_SIGNING_CERTIFICATE_PASSWORD" /t http://timestamp.digicert.com /v $_.FullName
           }
 
+      # Upload Signed Installers
       - name: Upload Signed Installers
         uses: actions/upload-artifact@v4
         with:
@@ -63,12 +85,14 @@ jobs:
     needs: sign
     runs-on: ubuntu-latest
     steps:
+      # Download Signed Installers
       - name: Download Signed Installers
         uses: actions/download-artifact@v4
         with:
           name: signed-rustdesk-installers
           path: release-artifacts
 
+      # Create GitHub Release
       - name: Create GitHub Release
         id: create_release
         uses: actions/create-release@v1
@@ -81,12 +105,14 @@ jobs:
           draft: false
           prerelease: false
 
+      # Rename Signed Installers (ensure proper naming)
       - name: Rename Signed Installers
         shell: pwsh
         run: |
           Rename-Item -Path "release-artifacts/rustdesk-installer-default.exe" -NewName "rustdesk-setup.exe"
           Rename-Item -Path "release-artifacts/rustdesk-installer-jeff.exe" -NewName "rustdesk-setup-jeff.exe"
 
+      # Upload Signed Default Installer to Release
       - name: Upload Signed Default Installer to Release
         uses: actions/upload-release-asset@v1
         env:
@@ -97,6 +123,7 @@ jobs:
           asset_name: rustdesk-setup.exe
           asset_content_type: application/octet-stream
 
+      # Upload Signed Jeff Build to Release
       - name: Upload Signed Jeff Build to Release
         uses: actions/upload-release-asset@v1
         env:
