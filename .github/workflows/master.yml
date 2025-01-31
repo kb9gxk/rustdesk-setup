@@ -54,6 +54,46 @@ jobs:
           $newConfigContent | Set-Content $configFile
         shell: pwsh
 
+      - name: Modify rustdesk-setup.csproj for Versioning
+        run: |
+          $projectFile = "rustdesk-setup.csproj"
+          $version = "${{ env.formatted_time }}"
+          $version2 = "${{ env.formatted_time2 }}"
+          
+          [xml]$xml = Get-Content $projectFile
+          
+          # Ensure PropertyGroup exists
+          if ($xml.Project.PropertyGroup -eq $null) {
+            $xml.Project.AppendChild($xml.CreateElement("PropertyGroup")) | Out-Null
+          }
+
+          # Set AssemblyVersion
+          $assemblyVersionElement = $xml.Project.PropertyGroup.AssemblyVersion
+          if ($assemblyVersionElement -eq $null) {
+              $assemblyVersionElement = $xml.CreateElement("AssemblyVersion")
+              $xml.Project.PropertyGroup.AppendChild($assemblyVersionElement) | Out-Null
+          }
+          $assemblyVersionElement.InnerText = $version
+
+          # Set FileVersion
+          $fileVersionElement = $xml.Project.PropertyGroup.FileVersion
+          if ($fileVersionElement -eq $null) {
+              $fileVersionElement = $xml.CreateElement("FileVersion")
+              $xml.Project.PropertyGroup.AppendChild($fileVersionElement) | Out-Null
+          }
+          $fileVersionElement.InnerText = $version
+
+          # Set FileVersion
+          $fileVersionElement = $xml.Project.PropertyGroup.FileVersion
+          if ($fileVersionElement -eq $null) {
+              $fileVersionElement = $xml.CreateElement("Version")
+              $xml.Project.PropertyGroup.AppendChild($fileVersionElement) | Out-Null
+          }
+          $fileVersionElement.InnerText = $version2
+          
+          $xml.Save($projectFile)
+        shell: pwsh        
+
       - name: Restore dependencies
         run: dotnet restore "rustdesk-setup.csproj"
 
@@ -114,7 +154,7 @@ jobs:
       - name: Check if pfx file exists
         if: matrix.build_type == 'default'
         run: |
-          ls -al artifacts
+          Get-ChildItem -Attributes artifacts
           file artifacts/code-signing.pfx
           echo "Decoded certificate listed"
 
@@ -137,7 +177,7 @@ jobs:
         if: matrix.build_type == 'default'
         run: |
           echo "Listing all files in the artifacts directory"
-          ls -al artifacts
+          Get-ChildItem -Attributes artifacts
 
       - name: Sign Executables
         if: matrix.build_type == 'default'
