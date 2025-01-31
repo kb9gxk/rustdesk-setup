@@ -2,13 +2,7 @@ name: 2 - Build Rustdesk Installers
 
 on:
   workflow_call:
-    inputs:
-      rustdesk_config:
-        required: true
-        type: string
-      rustdesk_password:
-        required: true
-        type: string
+    secrets: inherit  # Inherit secrets from master.yml
 
 jobs:
   build:
@@ -28,15 +22,18 @@ jobs:
           path: .
 
       - name: Set Environment Variables
+        env:
+          RUSTDESK_CONFIG: ${{ secrets.RUSTDESK_CONFIG }}
+          RUSTDESK_PASSWORD: ${{ secrets.RUSTDESK_PASSWORD }}
         run: |
-          echo "RUSTDESK_CONFIG=${{ inputs.rustdesk_config }}" >> $GITHUB_ENV
-          echo "RUSTDESK_PASSWORD=${{ inputs.rustdesk_password }}" >> $GITHUB_ENV
+          echo "RUSTDESK_CONFIG=${{ secrets.RUSTDESK_CONFIG }}" >> $GITHUB_ENV
+          echo "RUSTDESK_PASSWORD=${{ secrets.RUSTDESK_PASSWORD }}" >> $GITHUB_ENV
         shell: bash
 
       - name: Debug Secrets (Redacted)
         run: |
-          if ($env:RUSTDESK_CONFIG -eq "") { Write-Output "⚠ RUSTDESK_CONFIG is missing!" } else { Write-Output "✅ RUSTDESK_CONFIG is set!" }
-          if ($env:RUSTDESK_PASSWORD -eq "") { Write-Output "⚠ RUSTDESK_PASSWORD is missing!" } else { Write-Output "✅ RUSTDESK_PASSWORD is set!" }
+          if ("$env:RUSTDESK_CONFIG" -eq "") { Write-Output "⚠ RUSTDESK_CONFIG is missing!" } else { Write-Output "✅ RUSTDESK_CONFIG is set!" }
+          if ("$env:RUSTDESK_PASSWORD" -eq "") { Write-Output "⚠ RUSTDESK_PASSWORD is missing!" } else { Write-Output "✅ RUSTDESK_PASSWORD is set!" }
         shell: pwsh
 
       - name: Modify Configuration.cs (Jeff)
@@ -59,8 +56,7 @@ jobs:
 
       - name: Build project
         run: >-
-          dotnet build "rustdesk-setup.csproj" --configuration Release
-          --no-restore
+          dotnet build "rustdesk-setup.csproj" --configuration Release --no-restore
 
       - name: Publish project
         run: >-
@@ -82,5 +78,5 @@ jobs:
       - name: Upload Built Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: 'rustdesk-installer-${{ matrix.build_type }}'
-          path: 'publish/*.exe'
+          name: rustdesk-installer-${{ matrix.build_type }}
+          path: publish/*.exe
