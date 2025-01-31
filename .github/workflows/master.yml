@@ -1,6 +1,8 @@
 name: Full Rustdesk Build and Release
-'on':
-  workflow_dispatch: null
+
+on:
+  workflow_dispatch:  # Allows manual triggering
+
 jobs:
   full_build_default:
     runs-on: windows-latest
@@ -37,12 +39,15 @@ jobs:
             Write-Host "✅ All required secrets are set!"
           }
         shell: pwsh
+
       - name: Checkout code
         uses: actions/checkout@v3
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: 9.0.x
+
       - name: Get Chicago Timestamp
         id: timestamp
         run: >
@@ -62,6 +67,7 @@ jobs:
           echo "fullversion=$fullversion" >> $GITHUB_ENV
 
           echo "version=$version" >> $GITHUB_ENV
+
       - name: Modify rustdesk-setup.csproj for Versioning (Default)
         run: >
           $projectFile = "rustdesk-setup.csproj"
@@ -120,28 +126,35 @@ jobs:
 
           $xml.Save($projectFile)
         shell: pwsh
+
       - name: Debug - Display .csproj Content
         run: |
           Get-Content rustdesk-setup.csproj  
+
       - name: Restore dependencies
         run: dotnet restore "rustdesk-setup.csproj"
+
       - name: Clean up previous build artifacts
         run: |
           Remove-Item -Recurse -Force bin obj
         shell: pwsh
+        
       - name: Build & Publish (Default)
         run: >
           dotnet publish "rustdesk-setup.csproj" --configuration Release
           --output "publish" --no-restore --no-cache
+          /p:AssemblyVersion=${{ env.fullversion }} /p:FileVersion=${{ env.fullversion }} /p:Version=${{ env.version }}
 
           Rename-Item -Path "publish/rustdesk-setup.exe" -NewName
           "rustdesk-setup.exe"
         shell: pwsh
+
       - name: Upload Built Default Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: rustdesk-installer-default
           path: publish/rustdesk-setup.exe
+
   full_build_jeff:
     runs-on: windows-latest
     needs: full_build_default
@@ -153,10 +166,12 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: 9.0.x
+
       - name: Modify Configuration.cs (Jeff)
         run: |
           (Get-Content "Configuration.cs") `
@@ -165,6 +180,7 @@ jobs:
             | Set-Content "Configuration.cs"          
           Get-Content "Configuration.cs"
         shell: pwsh
+
       - name: Modify rustdesk-setup.csproj for Versioning (Jeff)
         run: >
           $projectFile = "rustdesk-setup.csproj"
@@ -223,28 +239,35 @@ jobs:
 
           $xml.Save($projectFile)
         shell: pwsh
+
       - name: Debug - Display .csproj Content
         run: |
           Get-Content rustdesk-setup.csproj  
+
       - name: Restore dependencies
         run: dotnet restore "rustdesk-setup.csproj"
+
       - name: Clean up previous build artifacts
         run: |
           Remove-Item -Recurse -Force bin obj
         shell: pwsh
+
       - name: Build & Publish (Jeff)
         run: >
           dotnet publish "rustdesk-setup.csproj" --configuration Release
           --output "publish" --no-restore --no-cache
+          /p:AssemblyVersion=${{ env.fullversion }} /p:FileVersion=${{ env.fullversion }} /p:Version=${{ env.version }}
 
           Rename-Item -Path "publish/rustdesk-setup.exe" -NewName
           "rustdesk-setup-jeff.exe"
         shell: pwsh
+
       - name: Upload Built Jeff Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: rustdesk-installer-jeff
           path: publish/rustdesk-setup-jeff.exe
+
   sign_and_release:
     runs-on: windows-latest
     needs:
@@ -256,11 +279,13 @@ jobs:
         with:
           name: rustdesk-installer-default
           path: artifacts/default
+
       - name: Download Jeff Build
         uses: actions/download-artifact@v4
         with:
           name: rustdesk-installer-jeff
           path: artifacts/jeff
+
       - name: Decode and Save Code Signing Certificate
         run: |
           $certData = "${{ secrets.CODE_SIGNING_CERTIFICATE }}"
@@ -278,6 +303,7 @@ jobs:
               exit 1
           }
         shell: pwsh
+
       - name: Locate signtool.exe
         id: find_signtool
         run: |
