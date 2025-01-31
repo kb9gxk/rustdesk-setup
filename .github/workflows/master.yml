@@ -95,9 +95,22 @@ jobs:
       - name: Decode and Save Code Signing Certificate
         if: matrix.build_type == 'default'
         run: |
-          echo "${{ env.CODE_SIGNING_CERTIFICATE }}" | base64 -d > artifacts/code-signing.pfx
-          echo "Certificate decoded successfully"
-
+          $base64String = "${{ env.CODE_SIGNING_CERTIFICATE }}"
+          if (-not [string]::IsNullOrEmpty($base64String)) {
+            try {
+              $bytes = [System.Convert]::FromBase64String($base64String)
+              [System.IO.File]::WriteAllBytes("artifacts/code-signing.pfx", $bytes)
+              Write-Host "Certificate decoded successfully"
+            } catch {
+              Write-Host "Error decoding certificate: $_"
+              exit 1
+            }
+          } else {
+            Write-Host "CODE_SIGNING_CERTIFICATE environment variable is empty."
+            exit 1
+          }
+        shell: pwsh
+      
       - name: Check if pfx file exists
         if: matrix.build_type == 'default'
         run: |
