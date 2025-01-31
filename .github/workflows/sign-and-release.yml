@@ -1,0 +1,54 @@
+name: Sign and Release Rustdesk Installers
+'on':
+  workflow_run:
+    workflows: ["Build Rustdesk Installers"]
+    types:
+      - completed
+
+jobs:
+  sign-and-release:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        build_type: [default, jeff]
+    steps:
+      - name: Download Built Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: 'rustdesk-installer-${{ matrix.build_type }}'
+          path: artifacts
+
+      - name: Download Code Signing Certificate
+        uses: actions/download-artifact@v4
+        with:
+          name: prep-artifacts
+          path: .
+
+      - name: Sign the Executable
+        env:
+          CODE_SIGNING_CERTIFICATE_PASSWORD: '${{ secrets.CODE_SIGNING_CERTIFICATE_PASSWORD }}'
+        run: >
+          & signtool sign /fd SHA256 /f codesigning.pfx /p "$env:CODE_SIGNING_CERTIFICATE_PASSWORD" /t http://timestamp.digicert.com /v artifacts/*.exe
+        shell: pwsh
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
+        with:
+          tag_name: 'v${{ github.run_number }}-${{ matrix.build_type }}'
+          release_name: 'Rustdesk Installer ${{ matrix.build_type }}'
+          body: 'Automated release for ${{ matrix.build_type }}'
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
+        with:
+          upload_url: '${{ steps.create_release.outputs.upload_url }}'
+          asset_path: 'artifacts/*.exe'
+          asset_name: 'rustdesk-setup-${{ matrix.build_type }}.exe'
+          asset_content_type: application/octet-stream
