@@ -22,13 +22,12 @@ jobs:
         with:
           name: 'rustdesk-installer-jeff'
           path: artifacts
-
-      - name: Download Code Signing Certificate
-        uses: actions/download-artifact@v4
-        with:
-          name: code-signing-cert
-          path: artifacts
-
+          
+      - name: Decode and Save Code Signing Certificate
+        shell: bash
+        run: |
+          echo "${{ secrets.CODE_SIGNING_CERTIFICATE }}" | base64 -d > code-signing.pfx
+      
       - name: Locate signtool.exe
         id: find_signtool
         shell: pwsh
