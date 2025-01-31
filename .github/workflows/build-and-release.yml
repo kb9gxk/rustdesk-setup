@@ -83,6 +83,7 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b main # Create and switch to the main branch
           git add rustdesk-setup.csproj
           git commit -m "Update versions to ${{ steps.timestamp.outputs.formatted_time }}"
           git push origin main
