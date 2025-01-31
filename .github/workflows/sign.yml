@@ -2,13 +2,6 @@ name: Sign Rustdesk Installers
 
 on:
   workflow_call:  # Allows execution when called by master.yml
-    inputs:
-      CODE_SIGNING_CERTIFICATE:
-        description: 'The code signing certificate'
-        required: true
-      CODE_SIGNING_CERTIFICATE_PASSWORD:
-        description: 'The password for the code signing certificate'
-        required: true
   workflow_dispatch:  # Allows manual triggering
   workflow_run:
     workflows: ["Build Rustdesk Installers"]
@@ -34,7 +27,7 @@ jobs:
       - name: Decode and Save Code Signing Certificate
         shell: bash
         run: |
-          echo "${{ inputs.CODE_SIGNING_CERTIFICATE }}" | base64 -d > artifacts/code-signing.pfx
+          echo "${{ secrets.CODE_SIGNING_CERTIFICATE }}" | base64 -d > artifacts/code-signing.pfx
           echo "Certificate decoded successfully"
 
       - name: Check if pfx file exists
@@ -67,7 +60,7 @@ jobs:
 
       - name: Sign Executables
         env:
-          CODE_SIGNING_CERTIFICATE_PASSWORD: '${{ inputs.CODE_SIGNING_CERTIFICATE_PASSWORD }}'
+          CODE_SIGNING_CERTIFICATE_PASSWORD: '${{ secrets.CODE_SIGNING_CERTIFICATE_PASSWORD }}'
         shell: pwsh
         run: |
           Write-Host "Attempting to sign the executables..."
