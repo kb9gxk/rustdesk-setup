@@ -47,8 +47,8 @@ jobs:
           echo "formatted_time=$formatted_time" >> $GITHUB_ENV
           echo "formatted_time2=$formatted_time2" >> $GITHUB_ENV
 
-          echo "::set-output name=formatted_time::$formatted_time"
-          echo "::set-output name=formatted_time2::$formatted_time2"
+          echo "formatted_time=$formatted_time" >> $GITHUB_ENV
+          echo "formatted_time2=$formatted_time2" >> $GITHUB_ENV
 
       - name: Modify rustdesk-setup.csproj for Versioning (Default)
         run: |
@@ -183,10 +183,18 @@ jobs:
     runs-on: windows-latest
     needs: [full_build_default, full_build_jeff]
     steps:
+    
       - name: Download Built Artifacts
         uses: actions/download-artifact@v4
         with:
-          path: artifacts
+          name: rustdesk-installer-default
+          path: artifacts/default
+
+      - name: Download Jeff Build
+        uses: actions/download-artifact@v4
+        with:
+          name: rustdesk-installer-jeff
+          path: artifacts/jeff
 
       - name: Locate signtool.exe
         id: find_signtool
