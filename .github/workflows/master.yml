@@ -129,12 +129,10 @@ jobs:
 
       - name: Modify Configuration.cs (Jeff)
         run: |
-          # Replace DefaultConfigValue with the value from the environment variable RUSTDESK_CONFIG
-          (Get-Content "Configuration.cs") -replace 'private const string DefaultConfigValue = "";', "private const string DefaultConfigValue = `"$env:RUSTDESK_CONFIG`";" |
-          Set-Content "Configuration.cs"
-          # Replace DefaultPasswordValue with the value from the environment variable RUSTDESK_PASSWORD
-          (Get-Content "Configuration.cs") -replace 'private const string DefaultPasswordValue = "";', "private const string DefaultPasswordValue = `"$env:RUSTDESK_PASSWORD`";" |
-          Set-Content "Configuration.cs"          
+          (Get-Content "Configuration.cs") `
+            -replace 'private const string DefaultConfigValue = "";', "private const string DefaultConfigValue = `"$env:RUSTDESK_CONFIG`";" `
+            -replace 'private const string DefaultPasswordValue = "";', "private const string DefaultPasswordValue = `"$env:RUSTDESK_PASSWORD`";" `
+            | Set-Content "Configuration.cs"          
           Get-Content "Configuration.cs"
         shell: pwsh
 
