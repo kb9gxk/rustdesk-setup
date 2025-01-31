@@ -159,7 +159,7 @@ jobs:
       - name: Check if pfx file exists
         if: matrix.build_type == 'default'
         run: |
-          Get-ChildItem
+          Get-ChildItem -Path artifacts
           file artifacts/code-signing.pfx
           echo "Decoded certificate listed"
 
@@ -212,6 +212,7 @@ jobs:
         if: matrix.build_type == 'default'
         shell: pwsh
         run: |
+          Get-ChildItem -Path artifacts
           Rename-Item -Path "artifacts/rustdesk-setup.exe" -NewName "rustdesk-setup.exe"
           Rename-Item -Path "artifacts/rustdesk-setup-jeff.exe" -NewName "rustdesk-setup-jeff.exe"
 
