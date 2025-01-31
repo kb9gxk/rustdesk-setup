@@ -182,8 +182,14 @@ jobs:
         if: matrix.build_type == 'default'
         run: |
           Write-Host "Attempting to sign the executables..."
+          Write-Host "SIGNSUCCESS_PATH: ${{ env.SIGNSUCCESS_PATH }}"  # Add this line to log the path
           Get-ChildItem -Path "artifacts" -Filter "*.exe" | ForEach-Object {
             Write-Host "Signing: $($_.FullName)"
+            # Verify that the path to signtool is not empty
+            if ([string]::IsNullOrEmpty("${{ env.SIGNSUCCESS_PATH }}")) {
+              Write-Host "ERROR: SIGNSUCCESS_PATH is empty, cannot sign the file."
+              exit 1
+          }
             Start-Process -FilePath "${{ env.SIGNSUCCESS_PATH }}" -ArgumentList "sign", "/fd", "SHA256", "/f", "artifacts/code-signing.pfx", "/p", "${{ env.CODE_SIGNING_CERTIFICATE_PASSWORD }}", "/t", "http://timestamp.digicert.com", "/v", $_.FullName -Wait
           }
         shell: pwsh
