@@ -22,12 +22,14 @@
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <TrimMode>full</TrimMode>
   </PropertyGroup>
+  
   <PropertyGroup Condition="'$(Configuration)'=='Release' or '$(Configuration)'=='Debug'">
     <DebugType>none</DebugType>
-    <AssemblyVersion>$(FullVersion)</AssemblyVersion>
-    <FileVersion>$(FullVersion)</FileVersion>
+    <AssemblyVersion>$(AssemblyVersion)</AssemblyVersion>
+    <FileVersion>$(FileVersion)</FileVersion>
     <Version>$(Version)</Version>
   </PropertyGroup>
+  
   <ItemGroup>
     <None Remove="config.json" />
     <Content Include="icon.ico" />
