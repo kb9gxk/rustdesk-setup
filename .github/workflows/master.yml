@@ -154,7 +154,7 @@ jobs:
       - name: Check if pfx file exists
         if: matrix.build_type == 'default'
         run: |
-          Get-ChildItem -Attributes artifacts
+          Get-ChildItem
           file artifacts/code-signing.pfx
           echo "Decoded certificate listed"
 
