@@ -66,11 +66,6 @@ jobs:
           $csproj.Save($csprojPath)
         shell: pwsh
 
-      - name: Determine Default Branch
-        id: get_branch
-        run: echo "DEFAULT_BRANCH=$(git remote show origin | grep 'HEAD branch' | awk '{print $NF}')" >> $GITHUB_ENV
-        shell: bash
-
       - name: Commit and Push Changes
         run: |
           git config --global user.name "github-actions[bot]"
@@ -81,7 +76,6 @@ jobs:
           git add rustdesk-setup.csproj
           git diff --cached --exit-code || (git commit -m "Update versions to ${{ env.formatted_time }}" && git push origin ${{ env.DEFAULT_BRANCH }})
         shell: pwsh
-
 
       - name: Modify Configuration.cs (Jeff)
         if: matrix.build_type == 'jeff'
