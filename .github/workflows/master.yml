@@ -6,14 +6,30 @@ on:
 jobs:
   full_build_default:
     runs-on: windows-latest
-    env:
-      RUSTDESK_CONFIG: ${{ secrets.RUSTDESK_CONFIG }}
-      RUSTDESK_PASSWORD: ${{ secrets.RUSTDESK_PASSWORD }}
-      CODE_SIGNING_CERTIFICATE: ${{ secrets.CODE_SIGNING_CERTIFICATE }}
-      CODE_SIGNING_CERTIFICATE_PASSWORD: ${{ secrets.CODE_SIGNING_CERTIFICATE_PASSWORD }}
+    outputs:
+      formatted_time: ${{ steps.timestamp.outputs.formatted_time }}
+      formatted_time2: ${{ steps.timestamp.outputs.formatted_time2 }}
     steps:
+      - name: Validate Required Secrets
+        run: |
+          $missing = @()
+          if (-not "${{ secrets.RUSTDESK_CONFIG }}") { $missing += "RUSTDESK_CONFIG" }
+          if (-not "${{ secrets.RUSTDESK_PASSWORD }}") { $missing += "RUSTDESK_PASSWORD" }
+          if (-not "${{ secrets.CODE_SIGNING_CERTIFICATE }}") { $missing += "CODE_SIGNING_CERTIFICATE" }
+          if (-not "${{ secrets.CODE_SIGNING_CERTIFICATE_PASSWORD }}") { $missing += "CODE_SIGNING_CERTIFICATE_PASSWORD" }
+          if (-not "${{ secrets.GITHUB_TOKEN }}") { $missing += "GITHUB_TOKEN" }
+
+          if ($missing.Count -gt 0) {
+            Write-Host "❌ Missing required secrets: $($missing -join ', ')"
+            exit 1
+          } else {
+            Write-Host "✅ All required secrets are set!"
+          }
+        shell: pwsh
+
       - name: Checkout code
         uses: actions/checkout@v3
+
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
@@ -28,47 +44,29 @@ jobs:
           
           $formatted_time = $chicagoTime.ToString("yyyy.MM.dd.HHmm")
           $formatted_time2 = $chicagoTime.ToString("yyyy.MM.dd")
-          
+
           echo "formatted_time=$formatted_time" >> $GITHUB_ENV
           echo "formatted_time2=$formatted_time2" >> $GITHUB_ENV
+
+          echo "::set-output name=formatted_time::$formatted_time"
+          echo "::set-output name=formatted_time2::$formatted_time2"
 
       - name: Modify rustdesk-setup.csproj for Versioning (Default)
         run: |
           $projectFile = "rustdesk-setup.csproj"
+          [xml]$xml = Get-Content $projectFile
           $version = "${{ env.formatted_time }}"
           $version2 = "${{ env.formatted_time2 }}"
-          
-          [xml]$xml = Get-Content $projectFile
-          
+
           # Ensure PropertyGroup exists
           if ($xml.Project.PropertyGroup -eq $null) {
             $xml.Project.AppendChild($xml.CreateElement("PropertyGroup")) | Out-Null
           }
-      
-          # Set AssemblyVersion
-          $assemblyVersionElement = $xml.Project.PropertyGroup.AssemblyVersion
-          if ($assemblyVersionElement -eq $null) {
-              $assemblyVersionElement = $xml.CreateElement("AssemblyVersion")
-              $xml.Project.PropertyGroup.AppendChild($assemblyVersionElement) | Out-Null
-          }
-          $assemblyVersionElement.InnerText = $version
-      
-          # Set FileVersion
-          $fileVersionElement = $xml.Project.PropertyGroup.FileVersion
-          if ($fileVersionElement -eq $null) {
-              $fileVersionElement = $xml.CreateElement("FileVersion")
-              $xml.Project.PropertyGroup.AppendChild($fileVersionElement) | Out-Null
-          }
-          $fileVersionElement.InnerText = $version
-      
-          # Set Version
-          $versionElement = $xml.Project.PropertyGroup.Version
-          if ($versionElement -eq $null) {
-              $versionElement = $xml.CreateElement("Version")
-              $xml.Project.PropertyGroup.AppendChild($versionElement) | Out-Null
-          }
-          $versionElement.InnerText = $version2
-          
+
+          # Update values
+          $xml.Project.PropertyGroup.AssemblyVersion = $version
+          $xml.Project.PropertyGroup.FileVersion = $version
+          $xml.Project.PropertyGroup.Version = $version2
           $xml.Save($projectFile)
         shell: pwsh
 
@@ -80,19 +78,24 @@ jobs:
 
       - name: Publish project (Default)
         run: |
-          $exeName = "rustdesk-setup.exe"
           dotnet publish "rustdesk-setup.csproj" --configuration Release --output "publish" --no-build
-          Rename-Item -Path "publish/rustdesk-setup.exe" -NewName $exeName
+          Rename-Item -Path "publish/rustdesk-setup.exe" -NewName "rustdesk-setup.exe"
         shell: pwsh
+
+      - name: Upload Built Default Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: rustdesk-installer-default
+          path: publish/rustdesk-setup.exe
 
   full_build_jeff:
     runs-on: windows-latest
-    needs: full_build_default  # This ensures that the 'jeff' build waits for 'default' to finish first
+    needs: full_build_default
     env:
       RUSTDESK_CONFIG: ${{ secrets.RUSTDESK_CONFIG }}
       RUSTDESK_PASSWORD: ${{ secrets.RUSTDESK_PASSWORD }}
-      CODE_SIGNING_CERTIFICATE: ${{ secrets.CODE_SIGNING_CERTIFICATE }}
-      CODE_SIGNING_CERTIFICATE_PASSWORD: ${{ secrets.CODE_SIGNING_CERTIFICATE_PASSWORD }}
+      FORMATTED_TIME: ${{ needs.full_build_default.outputs.formatted_time }}
+      FORMATTED_TIME2: ${{ needs.full_build_default.outputs.formatted_time2 }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -103,57 +106,18 @@ jobs:
           dotnet-version: 9.0.x
 
       - name: Modify Configuration.cs (Jeff)
-        if: matrix.build_type == 'jeff'
         run: |
-          $configFile = "Configuration.cs"
-          $configContent = Get-Content $configFile
-
-          $configValue = "private const string DefaultConfigValue = `"$($env:RUSTDESK_CONFIG)`";"
-          $passwordValue = "private const string DefaultPasswordValue = `"$($env:RUSTDESK_PASSWORD)`";"
-
-          $newConfigContent = $configContent -replace 'private const string DefaultConfigValue = .*;', $configValue
-          $newConfigContent = $newConfigContent -replace 'private const string DefaultPasswordValue = .*;', $passwordValue
-
-          $newConfigContent | Set-Content $configFile
+          (Get-Content "Configuration.cs") -replace 'private const string DefaultConfigValue = .*;', "private const string DefaultConfigValue = `"$env:RUSTDESK_CONFIG`";" |
+          Set-Content "Configuration.cs"
         shell: pwsh
-      
+
       - name: Modify rustdesk-setup.csproj for Versioning (Jeff)
         run: |
           $projectFile = "rustdesk-setup.csproj"
-          $version = "${{ env.formatted_time }}"
-          $version2 = "${{ env.formatted_time2 }}"
-          
           [xml]$xml = Get-Content $projectFile
-          
-          # Ensure PropertyGroup exists
-          if ($xml.Project.PropertyGroup -eq $null) {
-            $xml.Project.AppendChild($xml.CreateElement("PropertyGroup")) | Out-Null
-          }
-      
-          # Set AssemblyVersion
-          $assemblyVersionElement = $xml.Project.PropertyGroup.AssemblyVersion
-          if ($assemblyVersionElement -eq $null) {
-              $assemblyVersionElement = $xml.CreateElement("AssemblyVersion")
-              $xml.Project.PropertyGroup.AppendChild($assemblyVersionElement) | Out-Null
-          }
-          $assemblyVersionElement.InnerText = $version
-      
-          # Set FileVersion
-          $fileVersionElement = $xml.Project.PropertyGroup.FileVersion
-          if ($fileVersionElement -eq $null) {
-              $fileVersionElement = $xml.CreateElement("FileVersion")
-              $xml.Project.PropertyGroup.AppendChild($fileVersionElement) | Out-Null
-          }
-          $fileVersionElement.InnerText = $version
-      
-          # Set Version
-          $versionElement = $xml.Project.PropertyGroup.Version
-          if ($versionElement -eq $null) {
-              $versionElement = $xml.CreateElement("Version")
-              $xml.Project.PropertyGroup.AppendChild($versionElement) | Out-Null
-          }
-          $versionElement.InnerText = $version2
-          
+          $xml.Project.PropertyGroup.AssemblyVersion = "$env:FORMATTED_TIME"
+          $xml.Project.PropertyGroup.FileVersion = "$env:FORMATTED_TIME"
+          $xml.Project.PropertyGroup.Version = "$env:FORMATTED_TIME2"
           $xml.Save($projectFile)
         shell: pwsh
 
@@ -165,14 +129,19 @@ jobs:
 
       - name: Publish project (Jeff)
         run: |
-          $exeName = "rustdesk-setup-jeff.exe"
           dotnet publish "rustdesk-setup.csproj" --configuration Release --output "publish" --no-build
-          Rename-Item -Path "publish/rustdesk-setup.exe" -NewName $exeName
+          Rename-Item -Path "publish/rustdesk-setup.exe" -NewName "rustdesk-setup-jeff.exe"
         shell: pwsh
+
+      - name: Upload Built Jeff Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: rustdesk-installer-jeff
+          path: publish/rustdesk-setup-jeff.exe
 
   sign_executables:
     runs-on: windows-latest
-    needs: [full_build_default, full_build_jeff]  # Waits for both builds to finish
+    needs: [full_build_default, full_build_jeff]
     env:
       CODE_SIGNING_CERTIFICATE: ${{ secrets.CODE_SIGNING_CERTIFICATE }}
       CODE_SIGNING_CERTIFICATE_PASSWORD: ${{ secrets.CODE_SIGNING_CERTIFICATE_PASSWORD }}
@@ -180,76 +149,58 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Download Built Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
       - name: Locate signtool.exe
+        id: find_signtool
         run: |
-          $signtoolPath = Get-ChildItem -Path "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter signtool.exe | 
-            Where-Object { $_.FullName -match "x64" } | 
-            Select-Object -First 1 -ExpandProperty FullName
-
-          if (-not $signtoolPath) {
-            Write-Host "ERROR: signtool.exe not found!"
-            exit 1
-          }
-
-          Write-Host "SIGNSUCCESS: Found signtool.exe at $signtoolPath"
+          $signtoolPath = Get-Command signtool.exe | Select-Object -ExpandProperty Source
           echo "::set-output name=signtool_path::$signtoolPath"
 
       - name: Sign Executables
         run: |
-          Write-Host "Attempting to sign the executables..."
-          Write-Host "SIGNSUCCESS_PATH: ${{ steps.find_signtool.outputs.signtool_path }}"
           Get-ChildItem -Path "artifacts" -Filter "*.exe" | ForEach-Object {
-            Write-Host "Signing: $($_.FullName)"
-            if ([string]::IsNullOrEmpty("${{ steps.find_signtool.outputs.signtool_path }}")) {
-              Write-Host "ERROR: signtool_path is empty, cannot sign the file."
-              exit 1
-            }
             Start-Process -FilePath "${{ steps.find_signtool.outputs.signtool_path }}" -ArgumentList "sign", "/fd", "SHA256", "/f", "artifacts/code-signing.pfx", "/p", "${{ env.CODE_SIGNING_CERTIFICATE_PASSWORD }}", "/t", "http://timestamp.digicert.com", "/v", $_.FullName -Wait
           }
         shell: pwsh
 
-      - name: Upload Signed Installers
-        if: matrix.build_type == 'default'
+      - name: Upload Signed Builds
         uses: actions/upload-artifact@v4
         with:
           name: signed-rustdesk-installers
           path: artifacts/*.exe
 
-      - name: Download Signed Installers
-        if: matrix.build_type == 'default'
-        uses: actions/download-artifact@v4
-        with:
-          name: signed-rustdesk-installers
-          path: release-artifacts
-
-      - name: Rename Signed Installers
-        if: matrix.build_type == 'default'
-        shell: pwsh
-        run: |
-          Get-ChildItem -Path artifacts
-          Rename-Item -Path "artifacts/rustdesk-setup.exe" -NewName "rustdesk-setup.exe"
-          Rename-Item -Path "artifacts/rustdesk-setup-jeff.exe" -NewName "rustdesk-setup-jeff.exe"
-
       - name: Create GitHub Release
-        if: matrix.build_type == 'default'
         id: create_release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
         with:
-          tag_name: "v${{ env.formatted_time }}"
-          release_name: "Rustdesk Installer Release ${{ env.formatted_time }}"
-          body: "Signed Rustdesk installers."
+          tag_name: "v${{ needs.full_build_default.outputs.formatted_time }}"
+          release_name: "Rustdesk Installer Release ${{ needs.full_build_default.outputs.formatted_time }}"
+          body: "This release contains the signed Rustdesk installers."
           draft: false
           prerelease: false
 
-      - name: Upload Signed Builds to Release
-        if: matrix.build_type == 'default'
+      - name: Upload Signed Installers to Release
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
         with:
           upload_url: '${{ steps.create_release.outputs.upload_url }}'
-          asset_path: artifacts/rustdesk-setup*.exe
-          asset_name: rustdesk-setup*.exe
+          asset_path: artifacts/rustdesk-setup.exe
+          asset_name: rustdesk-setup.exe
+          asset_content_type: application/octet-stream
+
+      - name: Upload Signed Jeff Build to Release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
+        with:
+          upload_url: '${{ steps.create_release.outputs.upload_url }}'
+          asset_path: artifacts/rustdesk-setup-jeff.exe
+          asset_name: rustdesk-setup-jeff.exe
           asset_content_type: application/octet-stream
