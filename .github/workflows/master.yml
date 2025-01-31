@@ -35,6 +35,8 @@ jobs:
         run: |
           if ("$env:RUSTDESK_CONFIG" -eq "") { Write-Output "⚠ RUSTDESK_CONFIG is missing!" } else { Write-Output "✅ RUSTDESK_CONFIG is set!" }
           if ("$env:RUSTDESK_PASSWORD" -eq "") { Write-Output "⚠ RUSTDESK_PASSWORD is missing!" } else { Write-Output "✅ RUSTDESK_PASSWORD is set!" }
+          if ("$env:CODE_SIGNING_CERTIFICATE" -eq "") { Write-Output "⚠ CODE_SIGNING_CERTIFICATE is missing!" } else { Write-Output "✅ CODE_SIGNING_CERTIFICATE is set!" }
+          if ("$env:CODE_SIGNING_CERTIFICATE_PASSWORD" -eq "") { Write-Output "⚠ CODE_SIGNING_CERTIFICATE_PASSWORD is missing!" } else { Write-Output "✅ CODE_SIGNING_CERTIFICATE_PASSWORD is set!" }
         shell: pwsh
 
       - name: Modify Configuration.cs (Jeff)
