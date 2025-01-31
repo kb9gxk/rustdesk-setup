@@ -186,7 +186,7 @@ jobs:
           name: rustdesk-installer-jeff
           path: publish/rustdesk-setup-jeff.exe
 
-sign_and_release:
+  sign_and_release:
     runs-on: windows-latest
     needs: [full_build_default, full_build_jeff]
     steps:
