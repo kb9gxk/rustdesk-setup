@@ -1,4 +1,4 @@
-name: Sign and Release Rustdesk Installers
+name: Sign Rustdesk Installers
 
 on:
   workflow_call:  # Allows execution when called by master.yml
@@ -28,7 +28,13 @@ jobs:
         shell: bash
         run: |
           echo "${{ secrets.CODE_SIGNING_CERTIFICATE }}" | base64 -d > artifacts/code-signing.pfx
-          echo "Certificate decoded successfully"
+          # Verify that the file is not empty
+          if [ ! -s artifacts/code-signing.pfx ]; then
+            echo "ERROR: The decoded certificate is empty or failed to decode."
+            exit 1
+          else
+            echo "Certificate decoded successfully and is not empty."
+          fi
 
       - name: Check if pfx file exists
         shell: bash
@@ -66,18 +72,7 @@ jobs:
           Write-Host "Attempting to sign the executables..."
           Get-ChildItem -Path "artifacts" -Filter "*.exe" | ForEach-Object {
             Write-Host "Signing: $($_.FullName)"
-            & $env:SIGNSUCCESS_PATH sign /fd SHA256 /f "artifacts/code-signing.pfx" /p "$env:CODE_SIGNING_CERTIFICATE_PASSWORD" /t http://timestamp.digicert.com /v $_.FullName
-          }
-      - name: Rename Signed Installers
-        shell: pwsh
-        run: |
-          Get-ChildItem -Path "artifacts" -Filter "*.exe" | ForEach-Object {
-            if ($_.Name -eq "rustdesk-installer-default.exe") {
-              Rename-Item -Path $_.FullName -NewName "rustdesk-setup.exe"
-            }
-            elseif ($_.Name -eq "rustdesk-installer-jeff.exe") {
-                Rename-Item -Path $_.FullName -NewName "rustdesk-setup-jeff.exe"
-            }
+            & "${{ env.SIGNSUCCESS_PATH }}" sign /fd SHA256 /f "artifacts/code-signing.pfx" /p "$env:CODE_SIGNING_CERTIFICATE_PASSWORD" /t http://timestamp.digicert.com /v $_.FullName
           }
 
       - name: Upload Signed Installers
