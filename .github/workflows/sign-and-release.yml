@@ -8,49 +8,96 @@ name: Sign and Release Rustdesk Installers
       - completed
 
 jobs:
-  sign-and-release:
+  sign:
     runs-on: windows-latest
-    strategy:
-      matrix:
-        build_type: [default, jeff]
     steps:
-      - name: Download Built Artifacts
+      - name: Download Artifacts (Default Build)
         uses: actions/download-artifact@v4
         with:
-          name: 'rustdesk-installer-${{ matrix.build_type }}'
+          name: 'rustdesk-installer-default'
+          path: artifacts
+
+      - name: Download Artifacts (Jeff Build)
+        uses: actions/download-artifact@v4
+        with:
+          name: 'rustdesk-installer-jeff'
           path: artifacts
 
       - name: Download Code Signing Certificate
         uses: actions/download-artifact@v4
         with:
-          name: prep-artifacts
-          path: .
+          name: code-signing-cert
+          path: artifacts
 
-      - name: Sign the Executable
+      - name: Locate signtool.exe
+        id: find_signtool
+        shell: pwsh
+        run: |
+          $signtoolPath = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter signtool.exe | 
+            Where-Object { $_.FullName -match "x64" } | 
+            Select-Object -First 1 -ExpandProperty FullName
+
+          if (-not $signtoolPath) {
+            Write-Host "ERROR: signtool.exe not found!"
+            exit 1
+          } else {
+            Write-Host "SIGNSUCCESS: Found signtool.exe at $signtoolPath"
+            echo "SIGNSUCCESS_PATH=$signtoolPath" >> $GITHUB_ENV
+          }
+
+      - name: Sign Executables
         env:
           CODE_SIGNING_CERTIFICATE_PASSWORD: '${{ secrets.CODE_SIGNING_CERTIFICATE_PASSWORD }}'
-        run: >
-          & signtool sign /fd SHA256 /f codesigning.pfx /p "$env:CODE_SIGNING_CERTIFICATE_PASSWORD" /t http://timestamp.digicert.com /v artifacts/*.exe
         shell: pwsh
+        run: |
+          Get-ChildItem -Path "artifacts" -Filter "*.exe" | ForEach-Object {
+            & "${{ env.SIGNSUCCESS_PATH }}" sign /fd SHA256 /f artifacts/codesigning.pfx /p "$env:CODE_SIGNING_CERTIFICATE_PASSWORD" /t http://timestamp.digicert.com /v $_.FullName
+          }
 
-      - name: Create Release
+      - name: Upload Signed Installers
+        uses: actions/upload-artifact@v4
+        with:
+          name: signed-rustdesk-installers
+          path: artifacts/*.exe
+
+  release:
+    needs: sign
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Signed Installers
+        uses: actions/download-artifact@v4
+        with:
+          name: signed-rustdesk-installers
+          path: release-artifacts
+
+      - name: Create GitHub Release
         id: create_release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
         with:
-          tag_name: 'v${{ github.run_number }}-${{ matrix.build_type }}'
-          release_name: 'Rustdesk Installer ${{ matrix.build_type }}'
-          body: 'Automated release for ${{ matrix.build_type }}'
+          tag_name: v${{ github.run_id }}
+          release_name: "Rustdesk Installer Release ${{ github.run_id }}"
+          body: "Signed Rustdesk installers."
           draft: false
           prerelease: false
 
-      - name: Upload Release Asset
+      - name: Upload Signed Installers to Release
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
         with:
           upload_url: '${{ steps.create_release.outputs.upload_url }}'
-          asset_path: 'artifacts/*.exe'
-          asset_name: 'rustdesk-setup-${{ matrix.build_type }}.exe'
+          asset_path: release-artifacts/rustdesk-setup-default.exe
+          asset_name: rustdesk-setup-default.exe
+          asset_content_type: application/octet-stream
+
+      - name: Upload Signed Jeff Build
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
+        with:
+          upload_url: '${{ steps.create_release.outputs.upload_url }}'
+          asset_path: release-artifacts/rustdesk-setup-jeff.exe
+          asset_name: rustdesk-setup-jeff.exe
           asset_content_type: application/octet-stream
