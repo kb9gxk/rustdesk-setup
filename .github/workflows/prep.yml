@@ -1,0 +1,92 @@
+name: Prepare Build Environment
+'on':
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  prepare:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Get Chicago Timestamp
+        id: timestamp
+        run: >
+          $chicagoTimeZone =
+          [System.TimeZoneInfo]::FindSystemTimeZoneById("Central Standard Time")
+
+          $chicagoTime =
+          [System.TimeZoneInfo]::ConvertTimeFromUtc((Get-Date).ToUniversalTime(),
+          $chicagoTimeZone)
+
+          echo "formatted_time=$($chicagoTime.ToString('yyyy.M.dd.HHmm'))" >>
+          $GITHUB_ENV
+
+          echo "formatted_time2=$($chicagoTime.ToString('yyyy.M.dd'))" >>
+          $GITHUB_ENV
+
+          echo "formatted_time_linux=$(date -d
+          "$($chicagoTime.ToString('yyyy-MM-dd HH:mm:ss'))" +%Y.%m.%d.%H%M)" >>
+          $GITHUB_ENV
+        shell: pwsh
+
+      - name: Update Assembly and File Version
+        run: >
+          $csprojPath = "rustdesk-setup.csproj"
+
+          [xml]$csproj = Get-Content $csprojPath
+
+          if (-not $csproj.Project.PropertyGroup) {
+            $propertyGroup = $csproj.CreateElement("PropertyGroup")
+            $csproj.Project.AppendChild($propertyGroup)
+          } else {
+            $propertyGroup = $csproj.Project.PropertyGroup[0]
+          }
+
+          $propertyNames = @("FileVersion", "AssemblyVersion", "Version")
+
+          $propertyValues = @("${{ env.formatted_time }}", "${{
+          env.formatted_time }}", "${{ env.formatted_time2 }}")
+
+          for ($i = 0; $i -lt $propertyNames.Length; $i++) {
+            $prop = $propertyNames[$i]
+            $value = $propertyValues[$i].ToString()  # Explicitly convert to string
+
+            $element = $propertyGroup.SelectSingleNode($prop)
+            if (-not $element) {
+              $element = $csproj.CreateElement($prop)
+              $propertyGroup.AppendChild($element)
+            }
+
+            $element.InnerText = $value
+          }
+
+          $csproj.Save($csprojPath)
+        shell: pwsh
+
+      - name: Decode and Save Code Signing Certificate
+        env:
+          CODE_SIGNING_CERTIFICATE: '${{ secrets.CODE_SIGNING_CERTIFICATE }}'
+        run: >
+          $certBytes =
+          [System.Convert]::FromBase64String("$env:CODE_SIGNING_CERTIFICATE")
+
+          Set-Content -Path "codesigning.pfx" -Value $certBytes -Encoding
+          ([System.Text.Encoding]::Default)
+        shell: pwsh
+
+      - name: Upload Prepared Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: prep-artifacts
+          path: codesigning.pfx
+    outputs:
+      formatted_time_linux: '${{ env.formatted_time_linux }}'
