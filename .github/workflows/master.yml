@@ -177,8 +177,8 @@ jobs:
           }
       
           Write-Host "SIGNSUCCESS: Found signtool.exe at $signtoolPath"
-          echo "signtool_path=$signtoolPath" >> $GITHUB_OUTPUT  # Set the output variable
-
+          echo "::set-output name=signtool_path::$signtoolPath" 
+          
       - name: Sign Executables
         if: matrix.build_type == 'default'
         run: |
