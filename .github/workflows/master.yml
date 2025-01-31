@@ -183,8 +183,9 @@ jobs:
         run: |
           Write-Host "Attempting to sign the executables..."
           Get-ChildItem -Path "artifacts" -Filter "*.exe" | ForEach-Object {
-          Write-Host "Signing: $($_.FullName)"
-          Start-Process -FilePath "${{ env.SIGNSUCCESS_PATH }}" -ArgumentList "sign", "/fd", "SHA256", "/f", "artifacts/code-signing.pfx", "/p", "${{ env.CODE_SIGNING_CERTIFICATE_PASSWORD }}", "/t", "http://timestamp.digicert.com", "/v", $_.FullName -Wait
+            Write-Host "Signing: $($_.FullName)"
+            Start-Process -FilePath "${{ env.SIGNSUCCESS_PATH }}" -ArgumentList "sign", "/fd", "SHA256", "/f", "artifacts/code-signing.pfx", "/p", "${{ env.CODE_SIGNING_CERTIFICATE_PASSWORD }}", "/t", "http://timestamp.digicert.com", "/v", $_.FullName -Wait
+          }
         shell: pwsh
 
       - name: Upload Signed Installers
