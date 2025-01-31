@@ -1,0 +1,55 @@
+name: Build Rustdesk Installers
+'on':
+  workflow_run:
+    workflows: ["Prepare Build Environment"]
+    types:
+      - completed
+
+jobs:
+  build:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        build_type: [default, jeff]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Download Prepared Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: prep-artifacts
+          path: .
+
+      - name: Modify Configuration.cs (Jeff)
+        if: matrix.build_type == 'jeff'
+        run: >
+          (Get-Content Configuration.cs) -replace 'internal static string
+          RustdeskCfg { get; set; } = DefaultConfigValue;', "internal static
+          string RustdeskCfg { get; set; } = `"${{ secrets.RUSTDESK_CONFIG
+          }}`";" | Set-Content Configuration.cs
+
+          (Get-Content Configuration.cs) -replace 'internal static string
+          RustdeskPw { get; set; } = DefaultPasswordValue;', "internal static
+          string RustdeskPw { get; set; } = `"${{ secrets.RUSTDESK_PASSWORD
+          }}`";" | Set-Content Configuration.cs
+        shell: pwsh
+
+      - name: Restore dependencies
+        run: dotnet restore "rustdesk-setup.csproj"
+
+      - name: Build project
+        run: >-
+          dotnet build "rustdesk-setup.csproj" --configuration Release
+          --no-restore
+
+      - name: Publish project
+        run: >-
+          dotnet publish "rustdesk-setup.csproj" --configuration Release
+          --output publish --no-build
+
+      - name: Upload Built Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: 'rustdesk-installer-${{ matrix.build_type }}'
+          path: 'publish/*.exe'
