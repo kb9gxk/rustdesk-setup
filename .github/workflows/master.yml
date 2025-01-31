@@ -1,0 +1,16 @@
+name: Full Rustdesk Build and Release
+
+on:
+  workflow_dispatch:
+
+jobs:
+  prep:
+    uses: ./.github/workflows/prep.yml
+
+  build:
+    needs: prep
+    uses: ./.github/workflows/build.yml
+
+  sign-and-release:
+    needs: build
+    uses: ./.github/workflows/sign-and-release.yml
