@@ -12,6 +12,10 @@ jobs:
   sign:
     runs-on: windows-latest
     steps:
+      
+      - name: Check if CODE_SIGNING_CERTIFICATE is available
+        run: echo "CODE_SIGNING_CERTIFICATE: ${{ secrets.CODE_SIGNING_CERTIFICATE }}"
+        
       - name: Download Artifacts (Default Build)
         uses: actions/download-artifact@v4
         with:
