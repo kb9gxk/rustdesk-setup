@@ -1,11 +1,14 @@
 name: 2 - Build Rustdesk Installers
 
 on:
-  workflow_call:  # Allows execution when called by master.yml
-  workflow_run:
-    workflows: ["Prepare Build Environment"]
-    types:
-      - completed
+  workflow_call:
+    inputs:
+      rustdesk_config:
+        required: true
+        type: string
+      rustdesk_password:
+        required: true
+        type: string
 
 jobs:
   build:
@@ -24,19 +27,17 @@ jobs:
           name: prep-artifacts
           path: .
 
+      - name: Set Environment Variables
+        run: |
+          echo "RUSTDESK_CONFIG=${{ inputs.rustdesk_config }}" >> $GITHUB_ENV
+          echo "RUSTDESK_PASSWORD=${{ inputs.rustdesk_password }}" >> $GITHUB_ENV
+        shell: bash
+
       - name: Debug Secrets (Redacted)
         run: |
-          if ("${{ secrets.RUSTDESK_CONFIG }}" -eq "") { Write-Output "⚠ RUSTDESK_CONFIG is missing!" }
-          if ("${{ secrets.RUSTDESK_PASSWORD }}" -eq "") { Write-Output "⚠ RUSTDESK_PASSWORD is missing!" }
+          if ($env:RUSTDESK_CONFIG -eq "") { Write-Output "⚠ RUSTDESK_CONFIG is missing!" } else { Write-Output "✅ RUSTDESK_CONFIG is set!" }
+          if ($env:RUSTDESK_PASSWORD -eq "") { Write-Output "⚠ RUSTDESK_PASSWORD is missing!" } else { Write-Output "✅ RUSTDESK_PASSWORD is set!" }
         shell: pwsh
-
-      - name: Set Environment Variables
-        env:
-          RUSTDESK_CONFIG: ${{ secrets.RUSTDESK_CONFIG }}
-          RUSTDESK_PASSWORD: ${{ secrets.RUSTDESK_PASSWORD }}
-        run: |
-          echo "BUILD_TYPE=${{ matrix.build_type }}" >> $GITHUB_ENV
-        shell: bash
 
       - name: Modify Configuration.cs (Jeff)
         if: matrix.build_type == 'jeff'
@@ -44,15 +45,12 @@ jobs:
           $configFile = ".\RustdeskSetup\Configuration.cs"
           $configContent = Get-Content $configFile
 
-          # Expanding environment variables properly
           $configValue = "private const string DefaultConfigValue = `"$($env:RUSTDESK_CONFIG)`";"
           $passwordValue = "private const string DefaultPasswordValue = `"$($env:RUSTDESK_PASSWORD)`";"
 
-          # Replacing the content
           $newConfigContent = $configContent -replace 'private const string DefaultConfigValue = .*;', $configValue
           $newConfigContent = $newConfigContent -replace 'private const string DefaultPasswordValue = .*;', $passwordValue
-          
-          # Save the modified file
+
           $newConfigContent | Set-Content $configFile
         shell: pwsh
 
