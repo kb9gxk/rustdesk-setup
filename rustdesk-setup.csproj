@@ -13,16 +13,10 @@
     <ProductName>JP Custom Rustdesk Installer</ProductName>
     <Description>JP Custom Rustdesk Installer</Description>
     <Copyright>© 2023-2025</Copyright>
-    <AssemblyVersion>
-    </AssemblyVersion>
-    <FileVersion>
-    </FileVersion>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <Authors>Jeff Parrish</Authors>
     <NeutralLanguage>en-US</NeutralLanguage>
     <SignAssembly>false</SignAssembly>
-    <Version>
-    </Version>
     <Platforms>AnyCPU;x64</Platforms>
     <PublishTrimmed>true</PublishTrimmed>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
