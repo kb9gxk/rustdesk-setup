@@ -6,6 +6,9 @@ on:
       - main
   workflow_dispatch: # Allow manual triggering
 
+permissions:
+  contents: write  # ✅ Allows GitHub Actions to push changes
+
 jobs:
   build:
     runs-on: windows-latest
@@ -16,6 +19,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}  # ✅ Use the GitHub token for authentication
 
       - name: Determine Default Branch
         id: get_branch
@@ -70,11 +75,13 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git fetch --all
-          git checkout ${{ env.DEFAULT_BRANCH }}
-          git pull --rebase origin ${{ env.DEFAULT_BRANCH }}
+          
           git add rustdesk-setup.csproj
-          git diff --cached --exit-code || (git commit -m "Update versions to ${{ env.formatted_time }}" && git push origin ${{ env.DEFAULT_BRANCH }})
+          git commit -m "Update versions to ${{ env.formatted_time }}" || echo "No changes to commit"
+          
+          git fetch --all
+          git pull --rebase origin ${{ env.DEFAULT_BRANCH }} || echo "Pull failed, continuing..."
+          git push origin ${{ env.DEFAULT_BRANCH }} || echo "Push failed, skipping..."
         shell: pwsh
 
       - name: Modify Configuration.cs (Jeff)
