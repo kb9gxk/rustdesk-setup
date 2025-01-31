@@ -1,65 +1,255 @@
-full_build_default:
-  runs-on: windows-latest
-  needs: generate_version  # Ensure this job runs after the version generation
-  outputs:
-    fullversion: ${{ needs.generate_version.outputs.fullversion }}
-    version: ${{ needs.generate_version.outputs.version }}
-  steps:
-    - name: Validate Required Secrets
-      run: |
-        $missing = @()
-        if (-not "${{ secrets.RUSTDESK_CONFIG }}") { $missing += "RUSTDESK_CONFIG" }
-        if (-not "${{ secrets.RUSTDESK_PASSWORD }}") { $missing += "RUSTDESK_PASSWORD" }
-        if (-not "${{ secrets.CODE_SIGNING_CERTIFICATE }}") { $missing += "CODE_SIGNING_CERTIFICATE" }
-        if (-not "${{ secrets.CODE_SIGNING_CERTIFICATE_PASSWORD }}") { $missing += "CODE_SIGNING_CERTIFICATE_PASSWORD" }
-        if (-not "${{ secrets.GITHUB_TOKEN }}") { $missing += "GITHUB_TOKEN" }
-        if (-not "${{ secrets.RELEASE_TOKEN }}") { $missing += "RELEASE_TOKEN" }
-        if (-not "${{ needs.generate_version.outputs.fullversion }}" ) { $missing += "FULLVERSION" }
-        if (-not "${{ needs.generate_version.outputs.version }}" ) { $missing += "VERSION" }
-        
-        if ($missing.Count -gt 0) {
-          Write-Host "❌ Missing required secrets: $($missing -join ', ')"
-          exit 1
-        } else {
-          Write-Host "✅ All required secrets are set!"
-        }
-      shell: pwsh
+name: Full Rustdesk Build and Release
 
-    - name: Checkout code
-      uses: actions/checkout@v3
+on:
+  workflow_dispatch:  # Allows manual triggering
 
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v3
-      with:
-        dotnet-version: 9.0.x
+jobs:
+  generate_version:
+    runs-on: windows-latest
+    outputs:
+      fullversion: ${{ steps.timestamp.outputs.fullversion }}
+      version: ${{ steps.timestamp.outputs.version }}
+    steps:
+      - name: Get Chicago Timestamp
+        id: timestamp
+        run: |
+          $chicagoTimeZone = [System.TimeZoneInfo]::FindSystemTimeZoneById("Central Standard Time")
+          $chicagoTime = [System.TimeZoneInfo]::ConvertTimeFromUtc((Get-Date).ToUniversalTime(), $chicagoTimeZone)
+          $fullversion = $chicagoTime.ToString("yyyy.MM.dd.HHmm")
+          $version = $chicagoTime.ToString("yyyy.MM.dd")
+          echo "fullversion=$fullversion" >> $GITHUB_ENV
+          echo "version=$version" >> $GITHUB_ENV
+          echo "::set-output name=fullversion::$fullversion"
+          echo "::set-output name=version::$version"
 
-    - name: Debug - Display fullversion and version values
-      run: |
-        echo "FullVersion: ${{ needs.generate_version.outputs.fullversion }}"
-        echo "Version: ${{ needs.generate_version.outputs.version }}"
-      shell: pwsh
+  full_build_default:
+    runs-on: windows-latest
+    needs: generate_version  # Ensure this job runs after the version generation
+    outputs:
+      fullversion: ${{ needs.generate_version.outputs.fullversion }}
+      version: ${{ needs.generate_version.outputs.version }}
+    steps:
+      - name: Validate Required Secrets
+        run: |
+          $missing = @()
+          if (-not "${{ secrets.RUSTDESK_CONFIG }}") { $missing += "RUSTDESK_CONFIG" }
+          if (-not "${{ secrets.RUSTDESK_PASSWORD }}") { $missing += "RUSTDESK_PASSWORD" }
+          if (-not "${{ secrets.CODE_SIGNING_CERTIFICATE }}") { $missing += "CODE_SIGNING_CERTIFICATE" }
+          if (-not "${{ secrets.CODE_SIGNING_CERTIFICATE_PASSWORD }}") { $missing += "CODE_SIGNING_CERTIFICATE_PASSWORD" }
+          if (-not "${{ secrets.GITHUB_TOKEN }}") { $missing += "GITHUB_TOKEN" }
+          if (-not "${{ secrets.RELEASE_TOKEN }}") { $missing += "RELEASE_TOKEN" }
+          if (-not "${{ needs.generate_version.outputs.fullversion }}" ) { $missing += "FULLVERSION" }
+          if (-not "${{ needs.generate_version.outputs.version }}" ) { $missing += "VERSION" }
+          
+          if ($missing.Count -gt 0) {
+            Write-Host "❌ Missing required secrets: $($missing -join ', ')"
+            exit 1
+          } else {
+            Write-Host "✅ All required secrets are set!"
+          }
+        shell: pwsh
 
-    - name: Debug - Display .csproj Content
-      run: |
-        Get-Content rustdesk-setup.csproj  
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Restore dependencies
-      run: dotnet restore "rustdesk-setup.csproj"
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 9.0.x
 
-    - name: Build & Publish (Default)
-      run: |
-        dotnet publish "rustdesk-setup.csproj" --configuration Release --output "publish" --no-restore --no-cache /p:AssemblyVersion=${{ needs.generate_version.outputs.fullversion }} /p:FileVersion=${{ needs.generate_version.outputs.fullversion }} /p:Version=${{ needs.generate_version.outputs.version }} /p:GenerateAssemblyInfo=false
-        Rename-Item -Path "publish/rustdesk-setup.exe" -NewName "rustdesk-setup.exe"
-      shell: pwsh
+      - name: Debug - Display fullversion and version values
+        run: |
+          echo "FullVersion: ${{ needs.generate_version.outputs.fullversion }}"
+          echo "Version: ${{ needs.generate_version.outputs.version }}"
+        shell: pwsh
 
-    - name: Clean up previous build artifacts
-      run: |
-        Remove-Item -Recurse -Force .\bin
-        Remove-Item -Recurse -Force .\obj
-      shell: pwsh
+      - name: Debug - Display .csproj Content
+        run: |
+          Get-Content rustdesk-setup.csproj  
 
-    - name: Upload Built Default Artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: rustdesk-installer-default
-        path: publish/rustdesk-setup.exe
+      - name: Restore dependencies
+        run: dotnet restore "rustdesk-setup.csproj"
+
+      - name: Build & Publish (Default)
+        run: |
+          dotnet publish "rustdesk-setup.csproj" --configuration Release --output "publish" --no-restore --no-cache /p:AssemblyVersion=${{ needs.generate_version.outputs.fullversion }} /p:FileVersion=${{ needs.generate_version.outputs.fullversion }} /p:Version=${{ needs.generate_version.outputs.version }} /p:GenerateAssemblyInfo=false
+          Rename-Item -Path "publish/rustdesk-setup.exe" -NewName "rustdesk-setup.exe"
+        shell: pwsh
+
+      - name: Clean up previous build artifacts
+        run: |
+          Remove-Item -Recurse -Force .\bin
+          Remove-Item -Recurse -Force .\obj
+        shell: pwsh
+
+      - name: Upload Built Default Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: rustdesk-installer-default
+          path: publish/rustdesk-setup.exe
+
+  full_build_jeff:
+    runs-on: windows-latest
+    needs: full_build_default
+    env:
+      RUSTDESK_CONFIG: '${{ secrets.RUSTDESK_CONFIG }}'
+      RUSTDESK_PASSWORD: '${{ secrets.RUSTDESK_PASSWORD }}'
+      FULLVERSION: '${{ needs.generate_version.outputs.fullversion }}'
+      VERSION: '${{ needs.generate_version.outputs.version }}'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Modify Configuration.cs (Jeff)
+        run: |
+          (Get-Content "Configuration.cs") ` 
+            -replace 'private const string DefaultConfigValue = "";', "private const string DefaultConfigValue = `"$env:RUSTDESK_CONFIG`";" ` 
+            -replace 'private const string DefaultPasswordValue = "";', "private const string DefaultPasswordValue = `"$env:RUSTDESK_PASSWORD`";" ` 
+            | Set-Content "Configuration.cs"          
+          Get-Content "Configuration.cs"
+        shell: pwsh
+
+      - name: Debug - Display .csproj Content
+        run: |
+          Get-Content rustdesk-setup.csproj  
+
+      - name: Restore dependencies
+        run: dotnet restore "rustdesk-setup.csproj"
+
+      - name: Build & Publish (Jeff)
+        run: |
+          dotnet publish "rustdesk-setup.csproj" --configuration Release --output "publish" --no-restore --no-cache /p:AssemblyVersion=${{ needs.generate_version.outputs.fullversion }} /p:FileVersion=${{ needs.generate_version.outputs.fullversion }} /p:Version=${{ needs.generate_version.outputs.version }} /p:GenerateAssemblyInfo=false
+          Rename-Item -Path "publish/rustdesk-setup.exe" -NewName "rustdesk-setup-jeff.exe"
+        shell: pwsh
+      
+      - name: Clean up previous build artifacts
+        run: |
+          Remove-Item -Recurse -Force .\bin
+          Remove-Item -Recurse -Force .\obj
+        shell: pwsh
+
+      - name: Upload Built Jeff Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: rustdesk-installer-jeff
+          path: publish/rustdesk-setup-jeff.exe
+
+  sign_and_release:
+    runs-on: windows-latest
+    needs:
+      - full_build_default
+      - full_build_jeff
+    steps:
+      - name: Download Built Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: rustdesk-installer-default
+          path: artifacts/default
+
+      - name: Download Jeff Build
+        uses: actions/download-artifact@v4
+        with:
+          name: rustdesk-installer-jeff
+          path: artifacts/jeff
+
+      - name: Decode and Save Code Signing Certificate
+        run: |
+          $certData = "${{ secrets.CODE_SIGNING_CERTIFICATE }}"
+          if (-not $certData) {
+            Write-Host "❌ Code signing certificate secret is empty."
+            exit 1
+          }
+          try {
+              $certBytes = [System.Convert]::FromBase64String($certData)
+              [System.IO.File]::WriteAllBytes("artifacts/code-signing.pfx", $certBytes)
+              Write-Host "✅ Code signing certificate decoded and saved to artifacts/code-signing.pfx"
+          } catch {
+              Write-Host "❌ Error decoding or saving code signing certificate: $_"
+              exit 1
+          }
+        shell: pwsh
+
+      - name: Locate signtool.exe
+        id: find_signtool
+        run: |
+          $possiblePaths = @(
+            "C:\Program Files (x86)\Windows Kits\10\bin\x64\signtool.exe",
+            "C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x64\signtool.exe"
+          )
+          $signtoolPath = $null
+          foreach ($path in $possiblePaths) {
+            if (Test-Path $path) {
+              $signtoolPath = $path
+              break
+            }
+          }
+
+          if (-not $signtoolPath) {
+            Write-Host "❌ signtool.exe not found in common locations."
+            exit 1
+          }
+
+          echo "signtool_path=$signtoolPath" >> $GITHUB_ENV
+        shell: pwsh
+
+      - name: Sign Executables
+        run: |
+          $signtoolPath = "${{ steps.find_signtool.outputs.signtool_path }}"
+          if (-not $signtoolPath) {
+            Write-Host "❌ signtool.exe path is not set."
+            exit 1
+          }
+          Get-ChildItem -Path "artifacts" -Recurse -Filter "*.exe" |
+          ForEach-Object {
+              try {
+                  Start-Process -FilePath $signtoolPath -ArgumentList "sign", "/fd", "SHA256", "/f", "artifacts/code-signing.pfx", "/p", "${{ secrets.CODE_SIGNING_CERTIFICATE_PASSWORD }}", "/t", "http://timestamp.digicert.com", "/v", $_.FullName -Wait -ErrorAction Stop
+                  Write-Host "✅ Successfully signed $($_.FullName)"
+              } catch {
+                  Write-Host "❌ Error signing $($_.FullName): $_"
+                  exit 1
+              }
+          }
+        shell: pwsh
+
+      - name: Upload Signed Installers
+        uses: actions/upload-artifact@v4
+        with:
+          name: signed-rustdesk-installers
+          path: artifacts/*.exe
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: '${{ secrets.RELEASE_TOKEN }}'
+        with:
+          tag_name: 'v${{ needs.generate_version.outputs.fullversion }}'
+          release_name: 'Rustdesk Installer Release ${{ needs.generate_version.outputs.fullversion }}'
+          body: This release contains the signed Rustdesk installers.
+          draft: false
+          prerelease: false
+
+      - name: Upload Signed Default Installer
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: '${{ secrets.RELEASE_TOKEN }}'
+        with:
+          upload_url: '${{ steps.create_release.outputs.upload_url }}'
+          asset_path: artifacts/default/rustdesk-setup.exe
+          asset_name: rustdesk-setup.exe
+          asset_content_type: application/octet-stream
+
+      - name: Upload Signed Jeff Installer
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: '${{ secrets.RELEASE_TOKEN }}'
+        with:
+          upload_url: '${{ steps.create_release.outputs.upload_url }}'
+          asset_path: artifacts/jeff/rustdesk-setup-jeff.exe
+          asset_name: rustdesk-setup-jeff.exe
+          asset_content_type: application/octet-stream
