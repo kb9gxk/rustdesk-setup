@@ -201,19 +201,6 @@ jobs:
           name: signed-rustdesk-installers
           path: release-artifacts
 
-      - name: Create GitHub Release
-        if: matrix.build_type == 'default'
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
-        with:
-          tag_name: "v${{ env.formatted_time }}"
-          release_name: "Rustdesk Installer Release ${{ env.formatted_time }}"
-          body: "Signed Rustdesk installers."
-          draft: false
-          prerelease: false
-
       - name: Rename Signed Installers
         if: matrix.build_type == 'default'
         shell: pwsh
