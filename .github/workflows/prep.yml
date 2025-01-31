@@ -22,17 +22,6 @@ jobs:
           echo "formatted_time2=$(date -d 'now' +'%Y.%m.%d')" >> $GITHUB_ENV
           echo "formatted_time_linux=$(date -d 'now' +'%Y.%m.%d.%H%M')" >> $GITHUB_ENV
       
-      - name: Decode and Save Code Signing Certificate
-        shell: bash
-        run: |
-          echo "${{ secrets.CODE_SIGNING_CERTIFICATE }}" | base64 -d > code-signing.pfx
-      
-      - name: Upload Code Signing Certificate
-        uses: actions/upload-artifact@v4
-        with:
-          name: code-signing-cert
-          path: code-signing.pfx          
-
       - name: Upload Prep Artifacts
         uses: actions/upload-artifact@v4
         with:
