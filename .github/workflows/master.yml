@@ -178,9 +178,10 @@ jobs:
         run: |
           Write-Host "Attempting to sign the executables..."
           Get-ChildItem -Path "artifacts" -Filter "*.exe" | ForEach-Object {
-            Write-Host "Signing: $($_.FullName)"
+          Write-Host "Signing: $($_.FullName)"
             & "${{ env.SIGNSUCCESS_PATH }}" sign /fd SHA256 /f "artifacts/code-signing.pfx" /p "${{ env.CODE_SIGNING_CERTIFICATE_PASSWORD }}" /t http://timestamp.digicert.com /v $_.FullName
           }
+        shell: pwsh
 
       - name: Upload Signed Installers
         if: matrix.build_type == 'default'
