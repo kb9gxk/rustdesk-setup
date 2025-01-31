@@ -53,10 +53,11 @@ jobs:
           $projectFile = "rustdesk-setup.csproj"
           [xml]$xml = Get-Content $projectFile
           
+          # Find or create PropertyGroup
           $propGroup = $xml.Project.PropertyGroup
           if ($propGroup -eq $null) {
-            $propGroup = $xml.CreateElement("PropertyGroup")
-            $xml.Project.AppendChild($propGroup)
+              $propGroup = $xml.CreateElement("PropertyGroup")
+              $xml.Project.AppendChild($propGroup)
           }
 
           # Create or update AssemblyVersion element
@@ -67,7 +68,7 @@ jobs:
           }
           $assemblyVersionElement.InnerText = "${{ env.fullversion }}"
 
-           # Create or update FileVersion element
+          # Create or update FileVersion element
           $fileVersionElement = $propGroup.SelectSingleNode("FileVersion")
           if ($fileVersionElement -eq $null) {
               $fileVersionElement = $xml.CreateElement("FileVersion")
@@ -77,12 +78,13 @@ jobs:
 
           # Create or update Version element
           $versionElement = $propGroup.SelectSingleNode("Version")
-           if ($versionElement -eq $null) {
+          if ($versionElement -eq $null) {
               $versionElement = $xml.CreateElement("Version")
               $propGroup.AppendChild($versionElement)
           }
           $versionElement.InnerText = "${{ env.version }}"
 
+          # Save the updated .csproj file
           $xml.Save($projectFile)
         shell: pwsh
 
@@ -141,10 +143,11 @@ jobs:
           $projectFile = "rustdesk-setup.csproj"
           [xml]$xml = Get-Content $projectFile
           
+          # Find or create PropertyGroup
           $propGroup = $xml.Project.PropertyGroup
           if ($propGroup -eq $null) {
-            $propGroup = $xml.CreateElement("PropertyGroup")
-            $xml.Project.AppendChild($propGroup)
+              $propGroup = $xml.CreateElement("PropertyGroup")
+              $xml.Project.AppendChild($propGroup)
           }
 
           # Create or update AssemblyVersion element
@@ -153,24 +156,25 @@ jobs:
               $assemblyVersionElement = $xml.CreateElement("AssemblyVersion")
               $propGroup.AppendChild($assemblyVersionElement)
           }
-          $assemblyVersionElement.InnerText = "${{ env.FULLVERSION }}"
+          $assemblyVersionElement.InnerText = "${{ env.fullversion }}"
 
-           # Create or update FileVersion element
+          # Create or update FileVersion element
           $fileVersionElement = $propGroup.SelectSingleNode("FileVersion")
           if ($fileVersionElement -eq $null) {
               $fileVersionElement = $xml.CreateElement("FileVersion")
               $propGroup.AppendChild($fileVersionElement)
           }
-          $fileVersionElement.InnerText = "${{ env.FULLVERSION }}"
+          $fileVersionElement.InnerText = "${{ env.fullversion }}"
 
           # Create or update Version element
           $versionElement = $propGroup.SelectSingleNode("Version")
-           if ($versionElement -eq $null) {
+          if ($versionElement -eq $null) {
               $versionElement = $xml.CreateElement("Version")
               $propGroup.AppendChild($versionElement)
           }
-          $versionElement.InnerText = "${{ env.VERSION }}"
+          $versionElement.InnerText = "${{ env.version }}"
 
+          # Save the updated .csproj file
           $xml.Save($projectFile)
         shell: pwsh
 
