@@ -10,6 +10,9 @@ jobs:
   build:
     needs: prep
     uses: ./.github/workflows/build.yml
+    with:
+      RUSTDESK_CONFIG: ${{ secrets.RUSTDESK_CONFIG }}
+      RUSTDESK_PASSWORD: ${{ secrets.RUSTDESK_PASSWORD }}
 
   sign:
     needs: build
