@@ -28,7 +28,13 @@ jobs:
         shell: bash
         run: |
           echo "${{ secrets.CODE_SIGNING_CERTIFICATE }}" | base64 -d > artifacts/code-signing.pfx
-          echo "Certificate decoded successfully"
+          # Verify that the file is not empty
+          if [ ! -s artifacts/code-signing.pfx ]; then
+            echo "ERROR: The decoded certificate is empty or failed to decode."
+            exit 1
+          else
+            echo "Certificate decoded successfully and is not empty."
+          fi
 
       - name: Check if pfx file exists
         shell: bash
