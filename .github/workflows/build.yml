@@ -1,5 +1,6 @@
 name: Build Rustdesk Installers
-'on':
+
+on:
   workflow_call:  # Allows execution when called by master.yml
   workflow_run:
     workflows: ["Prepare Build Environment"]
