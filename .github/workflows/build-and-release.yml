@@ -49,12 +49,14 @@ jobs:
 
           for ($i = 0; $i -lt $propertyNames.Length; $i++) {
             $prop = $propertyNames[$i]
+            $value = $propertyValues[$i] -as [string]  # Ensure the value is a string
+
             if (-not $propertyGroup.$prop) {
               $newElement = $csproj.CreateElement($prop)
-              $newElement.InnerText = $propertyValues[$i]
+              $newElement.InnerText = $value
               $propertyGroup.AppendChild($newElement)
             } else {
-              $propertyGroup.$prop = $propertyValues[$i]
+              $propertyGroup.$prop = $value
             }
           }
 
