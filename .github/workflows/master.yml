@@ -4,11 +4,30 @@ on:
   workflow_dispatch:  # Allows manual triggering
 
 jobs:
-  full_build_default:
+  generate_version:
     runs-on: windows-latest
     outputs:
-      fullversion: '${{ steps.timestamp.outputs.fullversion }}'
-      version: '${{ steps.timestamp.outputs.version }}'
+      fullversion: ${{ steps.timestamp.outputs.fullversion }}
+      version: ${{ steps.timestamp.outputs.version }}
+    steps:
+      - name: Get Chicago Timestamp
+        id: timestamp
+        run: |
+          $chicagoTimeZone = [System.TimeZoneInfo]::FindSystemTimeZoneById("Central Standard Time")
+          $chicagoTime = [System.TimeZoneInfo]::ConvertTimeFromUtc((Get-Date).ToUniversalTime(), $chicagoTimeZone)
+          $fullversion = $chicagoTime.ToString("yyyy.MM.dd.HHmm")
+          $version = $chicagoTime.ToString("yyyy.MM.dd")
+          echo "fullversion=$fullversion" >> $GITHUB_ENV
+          echo "version=$version" >> $GITHUB_ENV
+          echo "::set-output name=fullversion::$fullversion"
+          echo "::set-output name=version::$version"
+
+  full_build_default:
+    runs-on: windows-latest
+    needs: generate_version  # Ensure this job runs after the version generation
+    outputs:
+      fullversion: ${{ needs.generate_version.outputs.fullversion }}
+      version: ${{ needs.generate_version.outputs.version }}
     steps:
       - name: Validate Required Secrets
         run: |
@@ -35,16 +54,6 @@ jobs:
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: 9.0.x
-
-      - name: Get Chicago Timestamp
-        id: timestamp
-        run: |
-          $chicagoTimeZone = [System.TimeZoneInfo]::FindSystemTimeZoneById("Central Standard Time")
-          $chicagoTime = [System.TimeZoneInfo]::ConvertTimeFromUtc((Get-Date).ToUniversalTime(), $chicagoTimeZone)
-          $fullversion = $chicagoTime.ToString("yyyy.MM.dd.HHmm")
-          $version = $chicagoTime.ToString("yyyy.MM.dd")
-          echo "fullversion=$fullversion" >> $GITHUB_ENV
-          echo "version=$version" >> $GITHUB_ENV
 
       - name: Debug - Display fullversion and version values
         run: |
@@ -83,8 +92,8 @@ jobs:
     env:
       RUSTDESK_CONFIG: '${{ secrets.RUSTDESK_CONFIG }}'
       RUSTDESK_PASSWORD: '${{ secrets.RUSTDESK_PASSWORD }}'
-      FULLVERSION: '${{ needs.full_build_default.outputs.fullversion }}'
-      VERSION: '${{ needs.full_build_default.outputs.version }}'
+      FULLVERSION: '${{ needs.generate_version.outputs.fullversion }}'
+      VERSION: '${{ needs.generate_version.outputs.version }}'
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -97,16 +106,10 @@ jobs:
       - name: Modify Configuration.cs (Jeff)
         run: |
           (Get-Content "Configuration.cs") `
-            -replace 'private const string DefaultConfigValue = "";', "private const string DefaultConfigValue = `"$env:RUSTDESK_CONFIG`";" `
+            -replace 'private const string DefaultConfigValue = "";', "private const string DefaultConfigValue = `"$env:RUSTDESK_CONFIG`";" ` 
             -replace 'private const string DefaultPasswordValue = "";', "private const string DefaultPasswordValue = `"$env:RUSTDESK_PASSWORD`";" `
             | Set-Content "Configuration.cs"          
           Get-Content "Configuration.cs"
-        shell: pwsh
-
-      - name: Debug - Display fullversion and version values
-        run: |
-          echo "FullVersion: $env:fullversion"
-          echo "Version: $env:version"
         shell: pwsh
 
       - name: Debug - Display .csproj Content
@@ -223,8 +226,8 @@ jobs:
         env:
           GITHUB_TOKEN: '${{ secrets.RELEASE_TOKEN }}'
         with:
-          tag_name: 'v${{ needs.full_build_default.outputs.fullversion }}'
-          release_name: 'Rustdesk Installer Release ${{ needs.full_build_default.outputs.fullversion }}'
+          tag_name: 'v${{ needs.generate_version.outputs.fullversion }}'
+          release_name: 'Rustdesk Installer Release ${{ needs.generate_version.outputs.fullversion }}'
           body: This release contains the signed Rustdesk installers.
           draft: false
           prerelease: false
