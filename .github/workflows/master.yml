@@ -180,7 +180,7 @@ jobs:
           name: rustdesk-installer-jeff
           path: publish/rustdesk-setup-jeff.exe
 
-  sign_and_release:
+sign_and_release:
     runs-on: windows-latest
     needs: [full_build_default, full_build_jeff]
     steps:
@@ -196,6 +196,24 @@ jobs:
         with:
           name: rustdesk-installer-jeff
           path: artifacts/jeff
+
+      - name: Decode and Save Code Signing Certificate
+        run: |
+          $certData = "${{ secrets.CODE_SIGNING_CERTIFICATE }}"
+          if (-not $certData) {
+            Write-Host "❌ Code signing certificate secret is empty."
+            exit 1
+          }
+          
+          try {
+              $certBytes = [System.Convert]::FromBase64String($certData)
+              [System.IO.File]::WriteAllBytes("artifacts/code-signing.pfx", $certBytes)
+              Write-Host "✅ Code signing certificate decoded and saved to artifacts/code-signing.pfx"
+          } catch {
+              Write-Host "❌ Error decoding or saving code signing certificate: $_"
+              exit 1
+          }
+        shell: pwsh
 
       - name: Locate signtool.exe
         id: find_signtool
@@ -234,7 +252,13 @@ jobs:
       - name: Sign Executables
         run: |
           Get-ChildItem -Path "artifacts" -Filter "*.exe" | ForEach-Object {
-            Start-Process -FilePath "${{ steps.find_signtool.outputs.signtool_path }}" -ArgumentList "sign", "/fd", "SHA256", "/f", "artifacts/code-signing.pfx", "/p", "${{ secrets.CODE_SIGNING_CERTIFICATE_PASSWORD }}", "/t", "http://timestamp.digicert.com", "/v", $_.FullName -Wait
+            try {
+                Start-Process -FilePath "${{ steps.find_signtool.outputs.signtool_path }}" -ArgumentList "sign", "/fd", "SHA256", "/f", "artifacts/code-signing.pfx", "/p", "${{ secrets.CODE_SIGNING_CERTIFICATE_PASSWORD }}", "/t", "http://timestamp.digicert.com", "/v", $_.FullName -Wait -ErrorAction Stop
+                Write-Host "✅ Successfully signed $($_.FullName)"
+              } catch {
+                Write-Host "❌ Error signing $($_.FullName): $_"
+                exit 1
+              }
           }
         shell: pwsh
 
