@@ -1,4 +1,4 @@
-name: Build Rustdesk Installers
+name: 2 - Build Rustdesk Installers
 
 on:
   workflow_call:  # Allows execution when called by master.yml
@@ -13,6 +13,7 @@ jobs:
     strategy:
       matrix:
         build_type: [default, jeff]
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -23,53 +24,37 @@ jobs:
           name: prep-artifacts
           path: .
 
-      - name: Modify Configuration.cs (Jeff)
+      - name: Debug Secrets (Redacted)
+        run: |
+          if ("${{ secrets.RUSTDESK_CONFIG }}" -eq "") { Write-Output "⚠ RUSTDESK_CONFIG is missing!" }
+          if ("${{ secrets.RUSTDESK_PASSWORD }}" -eq "") { Write-Output "⚠ RUSTDESK_PASSWORD is missing!" }
+        shell: pwsh
+
+      - name: Set Environment Variables
         env:
           RUSTDESK_CONFIG: ${{ secrets.RUSTDESK_CONFIG }}
           RUSTDESK_PASSWORD: ${{ secrets.RUSTDESK_PASSWORD }}
         run: |
-          $configValue = ""
-          $passwordValue = ""
+          echo "BUILD_TYPE=${{ matrix.build_type }}" >> $GITHUB_ENV
+        shell: bash
 
-          if ("${{ matrix.build_type }}" -eq "jeff") {
-            $configValue = "private const string DefaultConfigValue = `"$env:RUSTDESK_CONFIG`";"
-            $passwordValue = "private const string DefaultPasswordValue = `"$env:RUSTDESK_PASSWORD`";"
-          } else {
-            $configValue = 'private const string DefaultConfigValue = "";'
-            $passwordValue = 'private const string DefaultPasswordValue = "";'
-          }
-
-          (Get-Content Configuration.cs) -replace 'private const string DefaultConfigValue = "";', $configValue | Set-Content Configuration.cs
-          (Get-Content Configuration.cs) -replace 'private const string DefaultPasswordValue = "";', $passwordValue | Set-Content Configuration.cs
-        shell: pwsh
-
-      - name: Restore dependencies
-        run: dotnet restore "rustdesk-setup.csproj"
-
-      - name: Build project
-        run: >-
-          dotnet build "rustdesk-setup.csproj" --configuration Release
-          --no-restore
-
-      - name: Publish project
-        run: >-
-          dotnet publish "rustdesk-setup.csproj" --configuration Release
-          --output publish --no-build
-
-      - name: Rename Default Executable (for default build)
-        if: matrix.build_type == 'default'
-        shell: pwsh
-        run: |
-          Rename-Item -Path "publish/rustdesk-setup.exe" -NewName "rustdesk-setup.exe"
-
-      - name: Rename Jeff Executable (for jeff build)
+      - name: Modify Configuration.cs (Jeff)
         if: matrix.build_type == 'jeff'
-        shell: pwsh
         run: |
-          Rename-Item -Path "publish/rustdesk-setup.exe" -NewName "rustdesk-setup-jeff.exe"
+          $configFile = ".\RustdeskSetup\Configuration.cs"
+          $configContent = Get-Content $configFile
 
-      - name: Upload Built Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: 'rustdesk-installer-${{ matrix.build_type }}'
-          path: 'publish/*.exe'
+          # Expanding environment variables properly
+          $configValue = "private const string DefaultConfigValue = `"$($env:RUSTDESK_CONFIG)`";"
+          $passwordValue = "private const string DefaultPasswordValue = `"$($env:RUSTDESK_PASSWORD)`";"
+
+          # Replacing the content
+          $newConfigContent = $configContent -replace 'private const string DefaultConfigValue = .*;', $configValue
+          $newConfigContent = $newConfigContent -replace 'private const string DefaultPasswordValue = .*;', $passwordValue
+          
+          # Save the modified file
+          $newConfigContent | Set-Content $configFile
+        shell: pwsh
+
+      - name: Build Project
+        run: dotnet build RustdeskSetup.sln --configuration Release
