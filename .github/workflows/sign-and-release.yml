@@ -1,5 +1,7 @@
 name: Sign and Release Rustdesk Installers
 'on':
+  workflow_call:  # Allows execution when called by master.yml
+  workflow_dispatch:  # Allows manual triggering
   workflow_run:
     workflows: ["Build Rustdesk Installers"]
     types:
