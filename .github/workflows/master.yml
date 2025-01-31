@@ -55,7 +55,7 @@ jobs:
 
       - name: Build & Publish (Default)
         run: |
-          dotnet publish "rustdesk-setup.csproj" --configuration Release --output "publish" --no-restore --no-cache /p:GenerateAssemblyInfo=false /p:AssemblyVersion=${{ steps.timestamp.outputs.fullversion }} /p:FileVersion=${{ steps.timestamp.outputs.fullversion }} /p:Version=${{ steps.timestamp.outputs.version }}
+          dotnet publish "rustdesk-setup.csproj" --configuration Release --output "publish" --no-restore --no-cache /p:AssemblyVersion=${{ steps.timestamp.outputs.fullversion }} /p:FileVersion=${{ steps.timestamp.outputs.fullversion }} /p:Version=${{ steps.timestamp.outputs.version }} /p:GenerateAssemblyInfo=false
           Rename-Item -Path "publish/rustdesk-setup.exe" -NewName "rustdesk-setup.exe"
         shell: pwsh
 
@@ -106,7 +106,7 @@ jobs:
 
       - name: Build & Publish (Jeff)
         run: |
-          dotnet publish "rustdesk-setup.csproj" --configuration Release --output "publish" --no-restore --no-cache /p:GenerateAssemblyInfo=false /p:AssemblyVersion=${{ steps.timestamp.outputs.fullversion }} /p:FileVersion=${{ steps.timestamp.outputs.fullversion }} /p:Version=${{ steps.timestamp.outputs.version }}
+          dotnet publish "rustdesk-setup.csproj" --configuration Release --output "publish" --no-restore --no-cache /p:AssemblyVersion=${{ steps.timestamp.outputs.fullversion }} /p:FileVersion=${{ steps.timestamp.outputs.fullversion }} /p:Version=${{ steps.timestamp.outputs.version }} /p:GenerateAssemblyInfo=false
           Rename-Item -Path "publish/rustdesk-setup.exe" -NewName "rustdesk-setup-jeff.exe"
         shell: pwsh
       
