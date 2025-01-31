@@ -1,4 +1,4 @@
-name: Sign Rustdesk Installers
+name: Sign and Release Rustdesk Installers
 
 on:
   workflow_call:  # Allows execution when called by master.yml
@@ -23,6 +23,16 @@ jobs:
         with:
           name: 'rustdesk-installer-jeff'
           path: artifacts
+
+      - name: Ensure CODE_SIGNING_CERTIFICATE is set
+        shell: bash
+        run: |
+          if [ -z "${{ secrets.CODE_SIGNING_CERTIFICATE }}" ]; then
+            echo "ERROR: CODE_SIGNING_CERTIFICATE secret is not set or is empty."
+            exit 1
+          else
+            echo "CODE_SIGNING_CERTIFICATE is set."
+          fi
 
       - name: Decode and Save Code Signing Certificate
         shell: bash
