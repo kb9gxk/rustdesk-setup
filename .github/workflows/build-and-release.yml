@@ -106,6 +106,7 @@ jobs:
         run: |
           $exeFile = "publish/rustdesk-setup${{ matrix.build_type == 'jeff' && '-jeff' || '' }}.exe"
           $signtoolPath = Get-Command signtool -ErrorAction SilentlyContinue
+          
           if (-not $signtoolPath) {
             $signtoolPath = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter signtool.exe | 
               Where-Object { $_.FullName -match "x64" } | 
@@ -113,10 +114,24 @@ jobs:
           }
           if (-not $signtoolPath) {
             Write-Host "ERROR: signtool.exe not found!"
+          exit 1
+          }
+      
+          # Check if the certificate file exists
+          if (-not (Test-Path "codesigning.pfx")) {
+            Write-Host "ERROR: Certificate file (codesigning.pfx) not found!"
             exit 1
           }
-          & $signtoolPath sign /fd SHA256 /f codesigning.pfx /p "$env:CODE_SIGNING_CERTIFICATE_PASSWORD" /t http://timestamp.digicert.com /v $exeFile
+      
+          # Try signing the file
+          try {
+            & $signtoolPath sign /fd SHA256 /f codesigning.pfx /p "$env:CODE_SIGNING_CERTIFICATE_PASSWORD" /t http://timestamp.digicert.com /v $exeFile
+          } catch {
+            Write-Host "ERROR: Signing failed. $_"
+            exit 1
+          }
         shell: pwsh
+
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
