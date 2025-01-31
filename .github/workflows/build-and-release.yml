@@ -12,12 +12,12 @@ jobs:
     strategy:
       matrix:
         build_type: [default, jeff] # Define the build types
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
         with:
-          token: ${{ secrets.GITHUB_TOKEN }} # Ensure you have the correct permissions
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
@@ -29,19 +29,16 @@ jobs:
         run: |
           $chicagoTimeZone = [System.TimeZoneInfo]::FindSystemTimeZoneById("Central Standard Time")
           $chicagoTime = [System.TimeZoneInfo]::ConvertTimeFromUtc((Get-Date).ToUniversalTime(), $chicagoTimeZone)
-          $formattedTime = $chicagoTime.ToString("yyyy.M.dd.HHmm")
-          $formattedTime2 = $chicagoTime.ToString("yyyy.M.dd")
-          echo "formatted_time=$formattedTime" >> $GITHUB_OUTPUT
-          echo "formatted_time2=$formattedTime2" >> $GITHUB_OUTPUT
-          echo "formatted_time_linux=$(date -d "$($chicagoTime.ToString('yyyy-MM-dd HH:mm:ss'))" +%Y.%m.%d.%H%M)" >> $GITHUB_OUTPUT
+          echo "formatted_time=$($chicagoTime.ToString('yyyy.M.dd.HHmm'))" >> $GITHUB_ENV
+          echo "formatted_time2=$($chicagoTime.ToString('yyyy.M.dd'))" >> $GITHUB_ENV
+          echo "formatted_time_linux=$(date -d "$($chicagoTime.ToString('yyyy-MM-dd HH:mm:ss'))" +%Y.%m.%d.%H%M)" >> $GITHUB_ENV
         shell: pwsh
 
       - name: Update Assembly and File Version
         run: |
           $csprojPath = "rustdesk-setup.csproj"
           [xml]$csproj = Get-Content $csprojPath
-          
-          # Ensure PropertyGroup exists
+
           if (-not $csproj.Project.PropertyGroup) {
             $propertyGroup = $csproj.CreateElement("PropertyGroup")
             $csproj.Project.AppendChild($propertyGroup)
@@ -49,31 +46,18 @@ jobs:
             $propertyGroup = $csproj.Project.PropertyGroup[0]
           }
 
-          # Add or update FileVersion
-          if (-not $propertyGroup.FileVersion) {
-            $fileVersion = $csproj.CreateElement("FileVersion")
-            $fileVersion.InnerText = "${{ steps.timestamp.outputs.formatted_time }}"
-            $propertyGroup.AppendChild($fileVersion)
-          } else {
-            $propertyGroup.FileVersion = "${{ steps.timestamp.outputs.formatted_time }}"
-          }
+          $propertyNames = @("FileVersion", "AssemblyVersion", "Version")
+          $propertyValues = @("${{ env.formatted_time }}", "${{ env.formatted_time }}", "${{ env.formatted_time2 }}")
 
-          # Add or update AssemblyVersion
-          if (-not $propertyGroup.AssemblyVersion) {
-            $assemblyVersion = $csproj.CreateElement("AssemblyVersion")
-            $assemblyVersion.InnerText = "${{ steps.timestamp.outputs.formatted_time }}"
-            $propertyGroup.AppendChild($assemblyVersion)
-          } else {
-            $propertyGroup.AssemblyVersion = "${{ steps.timestamp.outputs.formatted_time }}"
-          }
-
-          # Add or update Version
-          if (-not $propertyGroup.Version) {
-            $version = $csproj.CreateElement("Version")
-            $version.InnerText = "${{ steps.timestamp.outputs.formatted_time2 }}"
-            $propertyGroup.AppendChild($version)
-          } else {
-            $propertyGroup.Version = "${{ steps.timestamp.outputs.formatted_time2 }}"
+          for ($i = 0; $i -lt $propertyNames.Length; $i++) {
+            $prop = $propertyNames[$i]
+            if (-not $propertyGroup.$prop) {
+              $newElement = $csproj.CreateElement($prop)
+              $newElement.InnerText = $propertyValues[$i]
+              $propertyGroup.AppendChild($newElement)
+            } else {
+              $propertyGroup.$prop = $propertyValues[$i]
+            }
           }
 
           $csproj.Save($csprojPath)
@@ -83,9 +67,10 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git checkout -b main # Create and switch to the main branch
+          git checkout main
+          git pull origin main
           git add rustdesk-setup.csproj
-          git commit -m "Update versions to ${{ steps.timestamp.outputs.formatted_time }}"
+          git commit -m "Update versions to ${{ env.formatted_time }}"
           git push origin main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -94,16 +79,8 @@ jobs:
       - name: Modify Configuration.cs (Jeff)
         if: matrix.build_type == 'jeff'
         run: |
-          $configFile = "Configuration.cs"
-          if (Test-Path $configFile) {
-            $configContent = Get-Content $configFile
-            $newConfigContent = $configContent -replace 'internal static string RustdeskCfg { get; set; } = DefaultConfigValue;', "internal static string RustdeskCfg { get; set; } = `"${{ secrets.RUSTDESK_CONFIG }}`"`;"
-            $newConfigContent = $newConfigContent -replace 'internal static string RustdeskPw { get; set; } = DefaultPasswordValue;', "internal static string RustdeskPw { get; set; } = `"${{ secrets.RUSTDESK_PASSWORD }}`"`;"
-            $newConfigContent | Set-Content $configFile
-          } else {
-            Write-Host "Configuration.cs not found!"
-            exit 1
-          }
+          (Get-Content Configuration.cs) -replace 'internal static string RustdeskCfg { get; set; } = DefaultConfigValue;', "internal static string RustdeskCfg { get; set; } = `"${{ secrets.RUSTDESK_CONFIG }}`";" | Set-Content Configuration.cs
+          (Get-Content Configuration.cs) -replace 'internal static string RustdeskPw { get; set; } = DefaultPasswordValue;', "internal static string RustdeskPw { get; set; } = `"${{ secrets.RUSTDESK_PASSWORD }}`";" | Set-Content Configuration.cs
         shell: pwsh
 
       - name: Restore dependencies
@@ -126,41 +103,13 @@ jobs:
           Move-Item -Path $exeFile -Destination $newExeName -Force
         shell: pwsh
 
-      - name: Verify Output File
-        run: |
-          $exeFile = "publish/rustdesk-setup${{ matrix.build_type == 'jeff' && '-jeff' || '' }}.exe"
-          if (!(Test-Path $exeFile)) {
-            Write-Host "ERROR: $exeFile not found in publish directory!"
-            exit 1
-          }
-        shell: pwsh
-          
-      - name: Decode and Save PFX Certificate
-        env:
-          CODE_SIGNING_CERTIFICATE: ${{ secrets.CODE_SIGNING_CERTIFICATE }}
-        run: |
-          if ("$env:CODE_SIGNING_CERTIFICATE" -eq "") {
-            Write-Host "ERROR: CODE_SIGNING_CERTIFICATE secret is missing!"
-            exit 1
-          }
-          $certBytes = [System.Convert]::FromBase64String("$env:CODE_SIGNING_CERTIFICATE")
-          [System.IO.File]::WriteAllBytes("codesigning.pfx", $certBytes)
-        shell: pwsh
-
-      - name: Verify Certificate File
-        run: |
-          if (!(Test-Path "codesigning.pfx")) { 
-            Write-Host "ERROR: Certificate file not found!" 
-            exit 1 
-          }
-        shell: pwsh
-          
       - name: Sign the Executable
         env:
           CODE_SIGNING_CERTIFICATE_PASSWORD: ${{ secrets.CODE_SIGNING_CERTIFICATE_PASSWORD }}
         run: |
-              $exeFile="publish/rustdesk-setup${{ matrix.build_type == 'jeff' && '-jeff' || '' }}.exe"
-              &"C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x64\signtool.exe" sign /fd SHA256 /f codesigning.pfx /p "$env:CODE_SIGNING_CERTIFICATE_PASSWORD" /t http://timestamp.digicert.com /v $exeFile
+          $exeFile = "publish/rustdesk-setup${{ matrix.build_type == 'jeff' && '-jeff' || '' }}.exe"
+          $signtoolPath = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter signtool.exe | Select-Object -First 1 -ExpandProperty FullName
+          & $signtoolPath sign /fd SHA256 /f codesigning.pfx /p "$env:CODE_SIGNING_CERTIFICATE_PASSWORD" /t http://timestamp.digicert.com /v $exeFile
         shell: pwsh
 
       - name: Upload artifact
@@ -168,21 +117,22 @@ jobs:
         with:
           name: rustdesk-installer-${{ matrix.build_type }}
           path: publish/rustdesk-setup${{ matrix.build_type == 'jeff' && '-jeff' || '' }}.exe
-        
+
     outputs:
-      formatted_time_linux: ${{ steps.timestamp.outputs.formatted_time_linux }}
+      formatted_time_linux: ${{ env.formatted_time_linux }}
 
   release:
     needs: build
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        build_type: [default, jeff] # Match the build types from the build job
+        build_type: [default, jeff]
+
     steps:
       - name: Download Artifacts
         uses: actions/download-artifact@v4
         with:
-          name: rustdesk-installer-${{ matrix.build_type }} # Match artifact name
+          name: rustdesk-installer-${{ matrix.build_type }}
           path: artifacts
 
       - name: Create Release
@@ -191,10 +141,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v${{ needs.build.outputs.formatted_time_linux }}-${{ matrix.build_type }} # Unique tag name
-          release_name: Release v${{ needs.build.outputs.formatted_time_linux }}(${{ matrix.build_type }})
+          tag_name: v${{ needs.build.outputs.formatted_time_linux }}-${{ matrix.build_type }}
+          release_name: Release v${{ needs.build.outputs.formatted_time_linux }} (${{ matrix.build_type }})
           body: |
-            Rustdesk installer build ${{ needs.build.outputs.formatted_time_linux }}(${{ matrix.build_type }}).
+            Rustdesk installer build ${{ needs.build.outputs.formatted_time_linux }} (${{ matrix.build_type }}).
           draft: false
           prerelease: false
 
