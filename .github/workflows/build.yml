@@ -2,7 +2,9 @@ name: 2 - Build Rustdesk Installers
 
 on:
   workflow_call:
-    secrets: inherit  # Inherit secrets from master.yml
+    secrets:
+      RUSTDESK_CONFIG: ${{ secrets.RUSTDESK_CONFIG }}
+      RUSTDESK_PASSWORD: ${{ secrets.RUSTDESK_PASSWORD }}
 
 jobs:
   build:
