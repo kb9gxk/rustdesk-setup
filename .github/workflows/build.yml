@@ -2,9 +2,13 @@ name: 2 - Build Rustdesk Installers
 
 on:
   workflow_call:
-    secrets:
-      RUSTDESK_CONFIG: ${{ secrets.RUSTDESK_CONFIG }}
-      RUSTDESK_PASSWORD: ${{ secrets.RUSTDESK_PASSWORD }}
+    inputs:
+      RUSTDESK_CONFIG:
+        required: true
+        type: string
+      RUSTDESK_PASSWORD:
+        required: true
+        type: string
 
 jobs:
   build:
@@ -21,12 +25,12 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: prep-artifacts
-          path: . 
+          path: .
 
       - name: Set Environment Variables
         run: |
-          echo "RUSTDESK_CONFIG=${{ secrets.RUSTDESK_CONFIG }}" >> $GITHUB_ENV
-          echo "RUSTDESK_PASSWORD=${{ secrets.RUSTDESK_PASSWORD }}" >> $GITHUB_ENV
+          echo "RUSTDESK_CONFIG=${{ inputs.RUSTDESK_CONFIG }}" >> $GITHUB_ENV
+          echo "RUSTDESK_PASSWORD=${{ inputs.RUSTDESK_PASSWORD }}" >> $GITHUB_ENV
         shell: bash
 
       - name: Debug Secrets (Redacted)
