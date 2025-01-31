@@ -1,125 +1,69 @@
-name: Sign and Release Rustdesk Installers
+name: Build Rustdesk Installers
 
 on:
   workflow_call:  # Allows execution when called by master.yml
-  workflow_dispatch:  # Allows manual triggering
   workflow_run:
-    workflows: ["Build Rustdesk Installers"]
+    workflows: ["Prepare Build Environment"]
     types:
       - completed
 
 jobs:
-  sign:
+  build:
     runs-on: windows-latest
+    strategy:
+      matrix:
+        build_type: [default, jeff]
     steps:
-      - name: Download Artifacts (Default Build)
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Download Prepared Artifacts
         uses: actions/download-artifact@v4
         with:
-          name: 'rustdesk-installer-default'
-          path: artifacts
+          name: prep-artifacts
+          path: .
 
-      - name: Download Artifacts (Jeff Build)
-        uses: actions/download-artifact@v4
-        with:
-          name: 'rustdesk-installer-jeff'
-          path: artifacts
+      - name: Modify Configuration.cs (Jeff)
+        if: matrix.build_type == 'jeff'
+        run: >
+          (Get-Content Configuration.cs) -replace 'internal static string
+          RustdeskCfg { get; set; } = DefaultConfigValue;', "internal static
+          string RustdeskCfg { get; set; } = `"${{ secrets.RUSTDESK_CONFIG
+          }}`";" | Set-Content Configuration.cs
 
-      - name: Decode and Save Code Signing Certificate
-        shell: bash
-        run: |
-          echo "${{ secrets.CODE_SIGNING_CERTIFICATE }}" | base64 -d > artifacts/code-signing.pfx
-          # Verify that the file is not empty
-          if [ ! -s artifacts/code-signing.pfx ]; then
-            echo "ERROR: The decoded certificate is empty or failed to decode."
-            exit 1
-          else
-            echo "Certificate decoded successfully and is not empty."
-          fi
+          (Get-Content Configuration.cs) -replace 'internal static string
+          RustdeskPw { get; set; } = DefaultPasswordValue;', "internal static
+          string RustdeskPw { get; set; } = `"${{ secrets.RUSTDESK_PASSWORD
+          }}`";" | Set-Content Configuration.cs
+        shell: pwsh
 
-      - name: Check if pfx file exists
-        shell: bash
-        run: |
-          ls -al artifacts
-          file artifacts/code-signing.pfx
-          echo "Decoded certificate listed"
-      
-      - name: Locate signtool.exe
-        id: find_signtool
+      - name: Restore dependencies
+        run: dotnet restore "rustdesk-setup.csproj"
+
+      - name: Build project
+        run: >-
+          dotnet build "rustdesk-setup.csproj" --configuration Release
+          --no-restore
+
+      - name: Publish project
+        run: >-
+          dotnet publish "rustdesk-setup.csproj" --configuration Release
+          --output publish --no-build
+
+      - name: Rename Default Executable (for default build)
+        if: matrix.build_type == 'default'
         shell: pwsh
         run: |
-          $signtoolPath = Get-ChildItem -Path "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter signtool.exe | 
-            Where-Object { $_.FullName -match "x64" } | 
-            Select-Object -First 1 -ExpandProperty FullName
+          Rename-Item -Path "publish/rustdesk-setup.exe" -NewName "rustdesk-setup.exe"
 
-          if (-not $signtoolPath) {
-            Write-Host "ERROR: signtool.exe not found!"
-            exit 1
-          }
-          Write-Host "SIGNSUCCESS: Found signtool.exe at $signtoolPath"
-          echo "SIGNSUCCESS_PATH=$signtoolPath" >> $GITHUB_ENV
-
-      - name: List all artifact files
-        shell: bash
-        run: |
-          echo "Listing all files in the artifacts directory"
-          ls -al artifacts
-
-      - name: Sign Executables
-        env:
-          CODE_SIGNING_CERTIFICATE_PASSWORD: '${{ secrets.CODE_SIGNING_CERTIFICATE_PASSWORD }}'
+      - name: Rename Jeff Executable (for jeff build)
+        if: matrix.build_type == 'jeff'
         shell: pwsh
         run: |
-          Write-Host "Attempting to sign the executables..."
-          Write-Host "Signtool Path: ${{ env.SIGNSUCCESS_PATH }}"  # Add this line for debugging
-          Get-ChildItem -Path "artifacts" -Filter "*.exe" | ForEach-Object {
-            Write-Host "Signing: $($_.FullName)"
-            & "${{ env.SIGNSUCCESS_PATH }}" sign /fd SHA256 /f "artifacts/code-signing.pfx" /p "$env:CODE_SIGNING_CERTIFICATE_PASSWORD" /t http://timestamp.digicert.com /v $_.FullName
-          }
+          Rename-Item -Path "publish/rustdesk-setup.exe" -NewName "rustdesk-setup-jeff.exe"
 
-      - name: Upload Signed Installers
+      - name: Upload Built Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: signed-rustdesk-installers
-          path: artifacts/*.exe
-
-  release:
-    needs: sign
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download Signed Installers
-        uses: actions/download-artifact@v4
-        with:
-          name: signed-rustdesk-installers
-          path: release-artifacts
-
-      - name: Create GitHub Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
-        with:
-          tag_name: v${{ github.run_id }}
-          release_name: "Rustdesk Installer Release ${{ github.run_id }}"
-          body: "Signed Rustdesk installers."
-          draft: false
-          prerelease: false
-
-      - name: Upload Signed Default Installer to Release
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
-        with:
-          upload_url: '${{ steps.create_release.outputs.upload_url }}'
-          asset_path: release-artifacts/rustdesk-setup.exe
-          asset_name: rustdesk-setup.exe
-          asset_content_type: application/octet-stream
-
-      - name: Upload Signed Jeff Build to Release
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
-        with:
-          upload_url: '${{ steps.create_release.outputs.upload_url }}'
-          asset_path: release-artifacts/rustdesk-setup-jeff.exe
-          asset_name: rustdesk-setup-jeff.exe
-          asset_content_type: application/octet-stream
+          name: 'rustdesk-installer-${{ matrix.build_type }}'
+          path: 'publish/*.exe'
