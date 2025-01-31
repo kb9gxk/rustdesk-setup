@@ -106,7 +106,7 @@ jobs:
 
       - name: Build & Publish (Jeff)
         run: |
-          dotnet publish "rustdesk-setup.csproj" --configuration Release --output "publish" --no-restore --no-cache /p:AssemblyVersion=${{ env.fullversion }} /p:FileVersion=${{ env.fullversion }} /p:Version=${{ env.version }}
+          dotnet publish "rustdesk-setup.csproj" --configuration Release --output "publish" --no-restore --no-cache /p:AssemblyVersion=${{ env.FULLVERSION }} /p:FileVersion=${{ env.FULLVERSION }} /p:Version=${{ env.VERSION }}
           Rename-Item -Path "publish/rustdesk-setup.exe" -NewName "rustdesk-setup-jeff.exe"
         shell: pwsh
       
@@ -235,3 +235,4 @@ jobs:
           upload_url: '${{ steps.create_release.outputs.upload_url }}'
           asset_path: artifacts/jeff/rustdesk-setup-jeff.exe
           asset_name: rustdesk-setup-jeff.exe
+          asset_content_type: application/octet-stream
