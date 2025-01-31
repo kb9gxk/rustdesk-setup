@@ -18,6 +18,7 @@ jobs:
           if (-not "${{ secrets.CODE_SIGNING_CERTIFICATE }}") { $missing += "CODE_SIGNING_CERTIFICATE" }
           if (-not "${{ secrets.CODE_SIGNING_CERTIFICATE_PASSWORD }}") { $missing += "CODE_SIGNING_CERTIFICATE_PASSWORD" }
           if (-not "${{ secrets.GITHUB_TOKEN }}") { $missing += "GITHUB_TOKEN" }
+          if (-not "${{ secrets.RELEASE_TOKEN }}") { $missing += "RELEASE_TOKEN" }
 
           if ($missing.Count -gt 0) {
             Write-Host "❌ Missing required secrets: $($missing -join ', ')"
@@ -247,7 +248,7 @@ jobs:
         id: create_release
         uses: actions/create-release@v1
         env:
-          GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
+          GITHUB_TOKEN: '${{ secrets.RELEASE_TOKEN }}'
         with:
           tag_name: "v${{ needs.full_build_default.outputs.formatted_time }}"
           release_name: "Rustdesk Installer Release ${{ needs.full_build_default.outputs.formatted_time }}"
@@ -258,7 +259,7 @@ jobs:
       - name: Upload Signed Default Installer
         uses: actions/upload-release-asset@v1
         env:
-          GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
+          GITHUB_TOKEN: '${{ secrets.RELEASE_TOKEN }}'
         with:
           upload_url: '${{ steps.create_release.outputs.upload_url }}'
           asset_path: artifacts/default/rustdesk-setup.exe
@@ -268,7 +269,7 @@ jobs:
       - name: Upload Signed Jeff Installer
         uses: actions/upload-release-asset@v1
         env:
-          GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
+          GITHUB_TOKEN: '${{ secrets.RELEASE_TOKEN }}'
         with:
           upload_url: '${{ steps.create_release.outputs.upload_url }}'
           asset_path: artifacts/jeff/rustdesk-setup-jeff.exe
