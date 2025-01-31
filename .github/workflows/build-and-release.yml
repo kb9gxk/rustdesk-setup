@@ -116,6 +116,7 @@ jobs:
           CODE_SIGNING_CERTIFICATE: ${{ secrets.CODE_SIGNING_CERTIFICATE }}
         run: |
           $certBytes = [System.Convert]::FromBase64String("$env:CODE_SIGNING_CERTIFICATE")
+          [System.IO.File]::WriteAllBytes("codesigning.pfx", $certBytes)
           Set-Content -Path "codesigning.pfx" -Value $certBytes -Encoding Byte
         shell: pwsh
 
