@@ -221,18 +221,20 @@ jobs:
           Rename-Item -Path "release-artifacts/rustdesk-setup.exe" -NewName "rustdesk-setup.exe"
           Rename-Item -Path "release-artifacts/rustdesk-setup-jeff.exe" -NewName "rustdesk-setup-jeff.exe"
 
-      - name: Upload Signed Default Installer to Release
+      - name: Create GitHub Release
         if: matrix.build_type == 'default'
-        uses: actions/upload-release-asset@v1
+        id: create_release
+        uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
         with:
-          upload_url: '${{ steps.create_release.outputs.upload_url }}'
-          asset_path: release-artifacts/rustdesk-setup.exe
-          asset_name: rustdesk-setup.exe
-          asset_content_type: application/octet-stream
+          tag_name: "v${{ env.formatted_time }}"
+          release_name: "Rustdesk Installer Release ${{ env.formatted_time }}"
+          body: "Signed Rustdesk installers."
+          draft: false
+          prerelease: false
 
-      - name: Upload Signed Jeff Build to Release
+      - name: Upload Signed Builds to Release
         if: matrix.build_type == 'default'
         uses: actions/upload-release-asset@v1
         env:
