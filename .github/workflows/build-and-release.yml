@@ -1,4 +1,4 @@
-name: Build and Release Rustdesk Installers 
+name: Build and Release Rustdesk Installers
 
 on:
   push:
