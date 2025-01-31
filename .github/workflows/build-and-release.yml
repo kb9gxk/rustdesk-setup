@@ -16,8 +16,11 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Determine Default Branch
+        id: get_branch
+        run: echo "DEFAULT_BRANCH=$(git remote show origin | grep 'HEAD branch' | awk '{print $NF}')" >> $GITHUB_ENV
+        shell: bash
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
@@ -63,18 +66,21 @@ jobs:
           $csproj.Save($csprojPath)
         shell: pwsh
 
+      - name: Determine Default Branch
+        id: get_branch
+        run: echo "DEFAULT_BRANCH=$(git remote show origin | grep 'HEAD branch' | awk '{print $NF}')" >> $GITHUB_ENV
+        shell: bash
+
       - name: Commit and Push Changes
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git checkout main
-          git pull origin main
+          git checkout ${{ env.DEFAULT_BRANCH }}
+          git pull origin ${{ env.DEFAULT_BRANCH }}
           git add rustdesk-setup.csproj
-          git commit -m "Update versions to ${{ env.formatted_time }}"
-          git push origin main
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          git diff --cached --exit-code || (git commit -m "Update versions to ${{ env.formatted_time }}" && git push origin ${{ env.DEFAULT_BRANCH }})
         shell: pwsh
+
 
       - name: Modify Configuration.cs (Jeff)
         if: matrix.build_type == 'jeff'
@@ -116,7 +122,14 @@ jobs:
           CODE_SIGNING_CERTIFICATE_PASSWORD: ${{ secrets.CODE_SIGNING_CERTIFICATE_PASSWORD }}
         run: |
           $exeFile = "publish/rustdesk-setup${{ matrix.build_type == 'jeff' && '-jeff' || '' }}.exe"
-          $signtoolPath = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter signtool.exe | Select-Object -First 1 -ExpandProperty FullName
+          $signtoolPath = Get-Command signtool -ErrorAction SilentlyContinue
+          if (-not $signtoolPath) {
+            $signtoolPath = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter signtool.exe | Select-Object -First 1 -ExpandProperty FullName
+          }
+          if (-not $signtoolPath) {
+            Write-Host "ERROR: signtool.exe not found!"
+            exit 1
+          }
           & $signtoolPath sign /fd SHA256 /f codesigning.pfx /p "$env:CODE_SIGNING_CERTIFICATE_PASSWORD" /t http://timestamp.digicert.com /v $exeFile
         shell: pwsh
 
