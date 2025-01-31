@@ -92,13 +92,13 @@ jobs:
           Move-Item -Path $exeFile -Destination $newExeName -Force
         shell: pwsh
 
-     - name: Decode and Save Code Signing Certificate
+      - name: Decode and Save Code Signing Certificate
         env:
           CODE_SIGNING_CERTIFICATE: ${{ secrets.CODE_SIGNING_CERTIFICATE }}
         run: |
           $certBytes = [System.Convert]::FromBase64String("$env:CODE_SIGNING_CERTIFICATE")
           Set-Content -Path "codesigning.pfx" -Value $certBytes -Encoding ([System.Text.Encoding]::Default)
-        shell: pwshh
+        shell: pwsh
 
       - name: Sign the Executable
         env:
