@@ -269,14 +269,23 @@ jobs:
 
       - name: Sign Executables
         run: |
+          # Make sure signtool.exe is found
+          $signtoolPath = "${{ steps.find_signtool.outputs.signtool_path }}"
+          if (-not $signtoolPath) {
+            Write-Host "❌ signtool.exe path is not set."
+            exit 1
+          }
+
+          # Sign all .exe files in the artifacts directory
           Get-ChildItem -Path "artifacts" -Recurse -Filter "*.exe" | ForEach-Object {
-            try {
-                Start-Process -FilePath "${{ steps.find_signtool.outputs.signtool_path }}" -ArgumentList "sign", "/fd", "SHA256", "/f", "artifacts/code-signing.pfx", "/p", "${{ secrets.CODE_SIGNING_CERTIFICATE_PASSWORD }}", "/t", "http://timestamp.digicert.com", "/v", $_.FullName -Wait -ErrorAction Stop
-                Write-Host "✅ Successfully signed $($_.FullName)"
-              } catch {
-                Write-Host "❌ Error signing $($_.FullName): $_"
-                exit 1
-              }
+              try {
+              # Start the signing process for each executable
+              Start-Process -FilePath $signtoolPath -ArgumentList "sign", "/fd", "SHA256", "/f", "artifacts/code-signing.pfx", "/p", "${{ secrets.CODE_SIGNING_CERTIFICATE_PASSWORD }}", "/t", "http://timestamp.digicert.com", "/v", $_.FullName -Wait -ErrorAction Stop
+              Write-Host "✅ Successfully signed $($_.FullName)"
+            } catch {
+              Write-Host "❌ Error signing $($_.FullName): $_"
+              exit 1
+            }
           }
         shell: pwsh
 
