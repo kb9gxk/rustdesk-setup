@@ -76,7 +76,7 @@ jobs:
 
       - name: Sign Executables
         env:
-          CODE_SIGNING_CERTIFICATE_PASSWORD: '${{ secrets.CODE_SIGNING_CERTIFICATE_PASSWORD }}'
+          CODE_SIGNING_CERTIFICATE_PASSWORD: '${{ secrets.CODE_SIGNING_CERTIFIATE_PASSWORD }}'
         shell: pwsh
         run: |
           Write-Host "Attempting to sign the executables..."
