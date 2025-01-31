@@ -49,15 +49,17 @@ jobs:
 
           for ($i = 0; $i -lt $propertyNames.Length; $i++) {
             $prop = $propertyNames[$i]
-            $value = $propertyValues[$i] -as [string]  # Ensure the value is a string
+            $value = $propertyValues[$i].ToString()  # Explicitly convert to string
 
-            if (-not $propertyGroup.$prop) {
-              $newElement = $csproj.CreateElement($prop)
-              $newElement.InnerText = $value
-              $propertyGroup.AppendChild($newElement)
-            } else {
-              $propertyGroup.$prop = $value
+            # Find or create the property element
+            $element = $propertyGroup.SelectSingleNode($prop)
+            if (-not $element) {
+              $element = $csproj.CreateElement($prop)
+              $propertyGroup.AppendChild($element)
             }
+
+            # Set the value of the property
+            $element.InnerText = $value
           }
 
           $csproj.Save($csprojPath)
