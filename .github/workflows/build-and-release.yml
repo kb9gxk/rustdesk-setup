@@ -25,14 +25,9 @@ jobs:
 
       - name: Get Chicago Timestamp
         id: timestamp
-        run: >
-          $chicagoTimeZone =
-          [System.TimeZoneInfo]::FindSystemTimeZoneById("Central Standard Time")
-          
-          $chicagoTime =
-          [System.TimeZoneInfo]::ConvertTimeFromUtc((Get-Date).ToUniversalTime(),
-          $chicagoTimeZone)
-
+        run: |
+          $chicagoTimeZone = [System.TimeZoneInfo]::FindSystemTimeZoneById("Central Standard Time")
+          $chicagoTime = [System.TimeZoneInfo]::ConvertTimeFromUtc((Get-Date).ToUniversalTime(), $chicagoTimeZone)
           echo "formatted_time=$($chicagoTime.ToString('yyyy.M.dd.HHmm'))" >> $GITHUB_ENV
           echo "formatted_time2=$($chicagoTime.ToString('yyyy.M.dd'))" >> $GITHUB_ENV
           echo "formatted_time_linux=$(date -d "$($chicagoTime.ToString('yyyy-MM-dd HH:mm:ss'))" +%Y.%m.%d.%H%M)" >> $GITHUB_ENV
