@@ -14,7 +14,7 @@ jobs:
   sign:
     needs: build
     uses: ./.github/workflows/sign.yml  # Call the new sign workflow after build
-    env:  # Passing secrets as environment variables
+    with:  # Pass secrets as inputs to the called workflow
       CODE_SIGNING_CERTIFICATE: ${{ secrets.CODE_SIGNING_CERTIFICATE }}
       CODE_SIGNING_CERTIFICATE_PASSWORD: ${{ secrets.CODE_SIGNING_CERTIFICATE_PASSWORD }}
 
