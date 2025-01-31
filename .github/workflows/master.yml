@@ -42,7 +42,7 @@ jobs:
       - name: Modify Configuration.cs (Jeff)
         if: matrix.build_type == 'jeff'
         run: |
-          $configFile = ".\RustdeskSetup\Configuration.cs"
+          $configFile = "Configuration.cs"
           $configContent = Get-Content $configFile
 
           $configValue = "private const string DefaultConfigValue = `"$($env:RUSTDESK_CONFIG)`";"
