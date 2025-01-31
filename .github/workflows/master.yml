@@ -1,7 +1,7 @@
 name: Full Rustdesk Build and Release
 
 on:
-  workflow_dispatch:
+  workflow_dispatch:  # Allows manual triggering
 
 jobs:
   prep:
@@ -11,6 +11,10 @@ jobs:
     needs: prep
     uses: ./.github/workflows/build.yml
 
-  sign-and-release:
+  sign:
     needs: build
-    uses: ./.github/workflows/sign-and-release.yml
+    uses: ./.github/workflows/sign.yml  # Call the new sign workflow after build
+
+  release:
+    needs: sign
+    uses: ./.github/workflows/release.yml  # Call the new release workflow after sign
