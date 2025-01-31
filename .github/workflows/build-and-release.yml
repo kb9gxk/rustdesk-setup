@@ -107,8 +107,9 @@ jobs:
           $exeFile = "publish/rustdesk-setup${{ matrix.build_type == 'jeff' && '-jeff' || '' }}.exe"
           $signtoolPath = Get-Command signtool -ErrorAction SilentlyContinue
           if (-not $signtoolPath) {
-            $signtoolPath = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter signtool.exe | Select-Object -First 1 -ExpandProperty FullName
-          }
+            $signtoolPath = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter signtool.exe | 
+                 Where-Object { $_.FullName -match "x64" } | 
+                 Select-Object -First 1 -ExpandProperty FullName
           if (-not $signtoolPath) {
             Write-Host "ERROR: signtool.exe not found!"
             exit 1
