@@ -28,11 +28,11 @@ jobs:
         id: timestamp
         run: |
           $chicagoTimeZone = [System.TimeZoneInfo]::FindSystemTimeZoneById("Central Standard Time")
-          $chicagoTime = [System.TimeZoneInfo]::ConvertTimeFromUtc((Get-Date -Format "yyyy-MM-ddTHH:mm:ss" -Date "now").ToUniversalTime(), $chicagoTimeZone)
+          $chicagoTime = [System.TimeZoneInfo]::ConvertTimeFromUtc((Get-Date).ToUniversalTime(), $chicagoTimeZone)
           
           $formatted_time = $chicagoTime.ToString("yyyy.MM.dd.HHmm")
           $formatted_time2 = $chicagoTime.ToString("yyyy.MM.dd")
-      
+          
           echo "formatted_time=$formatted_time" >> $GITHUB_ENV
           echo "formatted_time2=$formatted_time2" >> $GITHUB_ENV
 
