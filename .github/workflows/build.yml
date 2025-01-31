@@ -56,3 +56,11 @@ jobs:
 
       - name: Build Project
         run: dotnet build RustdeskSetup.sln --configuration Release
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: rustdesk-installers
+          path: |
+            RustdeskSetup\bin\Release\net9.0\rustdesk-setup.exe
+            RustdeskSetup\bin\Release\net9.0\rustdesk-setup-jeff.exe
