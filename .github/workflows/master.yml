@@ -53,16 +53,16 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore "rustdesk-setup.csproj"
 
-      - name: Clean up previous build artifacts
-        run: |
-          Remove-Item -Recurse -Force .\bin
-          Remove-Item -Recurse -Force .\obj
-        shell: pwsh
-
       - name: Build & Publish (Default)
         run: |
           dotnet publish "rustdesk-setup.csproj" --configuration Release --output "publish" --no-restore --no-cache /p:AssemblyVersion=${{ env.fullversion }} /p:FileVersion=${{ env.fullversion }} /p:Version=${{ env.version }}
           Rename-Item -Path "publish/rustdesk-setup.exe" -NewName "rustdesk-setup.exe"
+        shell: pwsh
+
+      - name: Clean up previous build artifacts
+        run: |
+          Remove-Item -Recurse -Force .\bin
+          Remove-Item -Recurse -Force .\obj
         shell: pwsh
 
       - name: Upload Built Default Artifacts
@@ -104,16 +104,16 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore "rustdesk-setup.csproj"
 
-      - name: Clean up previous build artifacts
-        run: |
-          Remove-Item -Recurse -Force .\bin
-          Remove-Item -Recurse -Force .\obj
-        shell: pwsh
-
       - name: Build & Publish (Jeff)
         run: |
           dotnet publish "rustdesk-setup.csproj" --configuration Release --output "publish" --no-restore --no-cache /p:AssemblyVersion=${{ env.fullversion }} /p:FileVersion=${{ env.fullversion }} /p:Version=${{ env.version }}
           Rename-Item -Path "publish/rustdesk-setup.exe" -NewName "rustdesk-setup-jeff.exe"
+        shell: pwsh
+      
+      - name: Clean up previous build artifacts
+        run: |
+          Remove-Item -Recurse -Force .\bin
+          Remove-Item -Recurse -Force .\obj
         shell: pwsh
 
       - name: Upload Built Jeff Artifacts
