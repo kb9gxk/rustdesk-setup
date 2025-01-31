@@ -95,7 +95,7 @@ jobs:
 
       - name: Build & Publish (Default)
         run: |
-          dotnet publish "rustdesk-setup.csproj" --configuration Release --output "publish" --no-restore
+          dotnet publish "rustdesk-setup.csproj" --configuration Release --output "publish" --no-restore --no-cache
           Rename-Item -Path "publish/rustdesk-setup.exe" -NewName "rustdesk-setup.exe"
         shell: pwsh
 
@@ -126,6 +126,7 @@ jobs:
         run: |
           (Get-Content "Configuration.cs") -replace 'private const string DefaultConfigValue = .*;', "private const string DefaultConfigValue = `"$env:RUSTDESK_CONFIG`";" |
           Set-Content "Configuration.cs"
+          Get-Content "Configuration.cs"
         shell: pwsh
 
       - name: Modify rustdesk-setup.csproj for Versioning (Jeff)
@@ -175,7 +176,7 @@ jobs:
 
       - name: Build & Publish (Jeff)
         run: |
-          dotnet publish "rustdesk-setup.csproj" --configuration Release --output "publish" --no-restore
+          dotnet publish "rustdesk-setup.csproj" --configuration Release --output "publish" --no-restore --no-cache
           Rename-Item -Path "publish/rustdesk-setup.exe" -NewName "rustdesk-setup-jeff.exe"
         shell: pwsh
 
