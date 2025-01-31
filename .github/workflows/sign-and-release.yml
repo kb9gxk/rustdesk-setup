@@ -1,4 +1,5 @@
 name: Sign and Release Rustdesk Installers
+
 'on':
   workflow_call:  # Allows execution when called by master.yml
   workflow_dispatch:  # Allows manual triggering
@@ -22,27 +23,26 @@ jobs:
         with:
           name: 'rustdesk-installer-jeff'
           path: artifacts
-          
+
       - name: Decode and Save Code Signing Certificate
         shell: bash
         run: |
-          echo "${{ secrets.CODE_SIGNING_CERTIFICATE }}" | base64 -d > code-signing.pfx
-      
+          echo "${{ secrets.CODE_SIGNING_CERTIFICATE }}" | base64 -d > artifacts/code-signing.pfx
+
       - name: Locate signtool.exe
         id: find_signtool
         shell: pwsh
         run: |
-          $signtoolPath = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter signtool.exe | 
-            Where-Object { $_.FullName -match "x64" } | 
+          $signtoolPath = Get-ChildItem -Path "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter signtool.exe |
+            Where-Object { $_.FullName -match "x64" } |
             Select-Object -First 1 -ExpandProperty FullName
 
           if (-not $signtoolPath) {
             Write-Host "ERROR: signtool.exe not found!"
             exit 1
-          } else {
-            Write-Host "SIGNSUCCESS: Found signtool.exe at $signtoolPath"
-            echo "SIGNSUCCESS_PATH=$signtoolPath" >> $GITHUB_ENV
           }
+
+          echo "SIGNSUCCESS_PATH=$signtoolPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8
 
       - name: Sign Executables
         env:
@@ -50,7 +50,7 @@ jobs:
         shell: pwsh
         run: |
           Get-ChildItem -Path "artifacts" -Filter "*.exe" | ForEach-Object {
-            & "${{ env.SIGNSUCCESS_PATH }}" sign /fd SHA256 /f artifacts/codesigning.pfx /p "$env:CODE_SIGNING_CERTIFICATE_PASSWORD" /t http://timestamp.digicert.com /v $_.FullName
+            & "${{ env.SIGNSUCCESS_PATH }}" sign /fd SHA256 /f "artifacts/code-signing.pfx" /p "$env:CODE_SIGNING_CERTIFICATE_PASSWORD" /t http://timestamp.digicert.com /v $_.FullName
           }
 
       - name: Upload Signed Installers
@@ -81,6 +81,12 @@ jobs:
           draft: false
           prerelease: false
 
+      - name: Rename Signed Installers
+        shell: pwsh
+        run: |
+          Rename-Item -Path "release-artifacts/rustdesk-installer-default.exe" -NewName "rustdesk-setup.exe"
+          Rename-Item -Path "release-artifacts/rustdesk-installer-jeff.exe" -NewName "rustdesk-setup-jeff.exe"
+
       - name: Upload Signed Default Installer to Release
         uses: actions/upload-release-asset@v1
         env:
@@ -91,7 +97,7 @@ jobs:
           asset_name: rustdesk-setup.exe
           asset_content_type: application/octet-stream
 
-      - name: Upload Signed Jeff Build
+      - name: Upload Signed Jeff Build to Release
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
