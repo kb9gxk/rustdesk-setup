@@ -35,7 +35,7 @@ jobs:
       
           echo "formatted_time=$formatted_time" >> $GITHUB_ENV
           echo "formatted_time2=$formatted_time2" >> $GITHUB_ENV
-      
+
       - name: Debug Secrets (Redacted)
         run: |
           if ("$env:RUSTDESK_CONFIG" -eq "") { Write-Output "⚠ RUSTDESK_CONFIG is missing!" } else { Write-Output "✅ RUSTDESK_CONFIG is set!" }
@@ -228,6 +228,6 @@ jobs:
           GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
         with:
           upload_url: '${{ steps.create_release.outputs.upload_url }}'
-          asset_path: release-artifacts/rustdesk-setup-jeff.exe
-          asset_name: rustdesk-setup-jeff.exe
+          asset_path: release-artifacts/rustdesk-setup*.exe
+          asset_name: rustdesk-setup*.exe
           asset_content_type: application/octet-stream
