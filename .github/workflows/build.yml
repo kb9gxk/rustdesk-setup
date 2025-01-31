@@ -64,6 +64,7 @@ jobs:
         shell: pwsh
         run: |
           Write-Host "Attempting to sign the executables..."
+          Write-Host "Signtool Path: ${{ env.SIGNSUCCESS_PATH }}"  # Add this line for debugging
           Get-ChildItem -Path "artifacts" -Filter "*.exe" | ForEach-Object {
             Write-Host "Signing: $($_.FullName)"
             & "${{ env.SIGNSUCCESS_PATH }}" sign /fd SHA256 /f "artifacts/code-signing.pfx" /p "$env:CODE_SIGNING_CERTIFICATE_PASSWORD" /t http://timestamp.digicert.com /v $_.FullName
