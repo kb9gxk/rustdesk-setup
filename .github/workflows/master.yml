@@ -61,9 +61,29 @@ jobs:
             $xml.Project.AppendChild($propGroup)
           }
 
-          $propGroup.AssemblyVersion = "${{ env.formatted_time }}"
-          $propGroup.FileVersion = "${{ env.formatted_time }}"
-          $propGroup.Version = "${{ env.formatted_time2 }}"
+          # Create or update AssemblyVersion element
+          $assemblyVersionElement = $propGroup.SelectSingleNode("AssemblyVersion")
+          if ($assemblyVersionElement -eq $null) {
+              $assemblyVersionElement = $xml.CreateElement("AssemblyVersion")
+              $propGroup.AppendChild($assemblyVersionElement)
+          }
+          $assemblyVersionElement.InnerText = "${{ env.formatted_time }}"
+
+           # Create or update FileVersion element
+          $fileVersionElement = $propGroup.SelectSingleNode("FileVersion")
+          if ($fileVersionElement -eq $null) {
+              $fileVersionElement = $xml.CreateElement("FileVersion")
+              $propGroup.AppendChild($fileVersionElement)
+          }
+          $fileVersionElement.InnerText = "${{ env.formatted_time }}"
+
+          # Create or update Version element
+          $versionElement = $propGroup.SelectSingleNode("Version")
+           if ($versionElement -eq $null) {
+              $versionElement = $xml.CreateElement("Version")
+              $propGroup.AppendChild($versionElement)
+          }
+          $versionElement.InnerText = "${{ env.formatted_time2 }}"
 
           $xml.Save($projectFile)
         shell: pwsh
@@ -117,9 +137,29 @@ jobs:
             $xml.Project.AppendChild($propGroup)
           }
 
-          $propGroup.AssemblyVersion = "$env:FORMATTED_TIME"
-          $propGroup.FileVersion = "$env:FORMATTED_TIME"
-          $propGroup.Version = "$env:FORMATTED_TIME2"
+          # Create or update AssemblyVersion element
+          $assemblyVersionElement = $propGroup.SelectSingleNode("AssemblyVersion")
+          if ($assemblyVersionElement -eq $null) {
+              $assemblyVersionElement = $xml.CreateElement("AssemblyVersion")
+              $propGroup.AppendChild($assemblyVersionElement)
+          }
+          $assemblyVersionElement.InnerText = "${{ env.formatted_time }}"
+
+           # Create or update FileVersion element
+          $fileVersionElement = $propGroup.SelectSingleNode("FileVersion")
+          if ($fileVersionElement -eq $null) {
+              $fileVersionElement = $xml.CreateElement("FileVersion")
+              $propGroup.AppendChild($fileVersionElement)
+          }
+          $fileVersionElement.InnerText = "${{ env.formatted_time }}"
+
+          # Create or update Version element
+          $versionElement = $propGroup.SelectSingleNode("Version")
+           if ($versionElement -eq $null) {
+              $versionElement = $xml.CreateElement("Version")
+              $propGroup.AppendChild($versionElement)
+          }
+          $versionElement.InnerText = "${{ env.formatted_time2 }}"
 
           $xml.Save($projectFile)
         shell: pwsh
