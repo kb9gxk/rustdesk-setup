@@ -38,6 +38,8 @@ jobs:
           if (-not "${{ secrets.CODE_SIGNING_CERTIFICATE_PASSWORD }}") { $missing += "CODE_SIGNING_CERTIFICATE_PASSWORD" }
           if (-not "${{ secrets.GITHUB_TOKEN }}") { $missing += "GITHUB_TOKEN" }
           if (-not "${{ secrets.RELEASE_TOKEN }}") { $missing += "RELEASE_TOKEN" }
+          if (-not "${{ env:fullversion }}") { $missing += "FULLVERSION" }
+          if (-not "${{ env:version }}") { $missing += "VERSION" }
           
           if ($missing.Count -gt 0) {
             Write-Host "❌ Missing required secrets: $($missing -join ', ')"
