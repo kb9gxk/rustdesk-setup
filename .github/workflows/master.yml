@@ -61,11 +61,7 @@ jobs:
         run: |
           echo "FullVersion: ${{ needs.generate_version.outputs.fullversion }}"
           echo "Version: ${{ needs.generate_version.outputs.version }}"
-        shell: pwsh
-
-      - name: Debug - Display .csproj Content
-        run: |
-          Get-Content rustdesk-setup.csproj  
+        shell: pwsh 
 
       - name: Restore dependencies
         run: dotnet restore "rustdesk-setup.csproj"
@@ -97,6 +93,26 @@ jobs:
       FULLVERSION: '${{ needs.generate_version.outputs.fullversion }}'
       VERSION: '${{ needs.generate_version.outputs.version }}'
     steps:
+      - name: Validate Required Secrets
+        run: |
+          $missing = @()
+          if (-not "${{ secrets.RUSTDESK_CONFIG }}") { $missing += "RUSTDESK_CONFIG" }
+          if (-not "${{ secrets.RUSTDESK_PASSWORD }}") { $missing += "RUSTDESK_PASSWORD" }
+          if (-not "${{ secrets.CODE_SIGNING_CERTIFICATE }}") { $missing += "CODE_SIGNING_CERTIFICATE" }
+          if (-not "${{ secrets.CODE_SIGNING_CERTIFICATE_PASSWORD }}") { $missing += "CODE_SIGNING_CERTIFICATE_PASSWORD" }
+          if (-not "${{ secrets.GITHUB_TOKEN }}") { $missing += "GITHUB_TOKEN" }
+          if (-not "${{ secrets.RELEASE_TOKEN }}") { $missing += "RELEASE_TOKEN" }
+          if (-not "${{ needs.generate_version.outputs.fullversion }}" ) { $missing += "FULLVERSION" }
+          if (-not "${{ needs.generate_version.outputs.version }}" ) { $missing += "VERSION" }
+          
+          if ($missing.Count -gt 0) {
+            Write-Host "❌ Missing required secrets: $($missing -join ', ')"
+            exit 1
+          } else {
+            Write-Host "✅ All required secrets are set!"
+          }
+        shell: pwsh
+        
       - name: Checkout code
         uses: actions/checkout@v3
 
@@ -105,8 +121,12 @@ jobs:
         with:
           dotnet-version: 9.0.x
 
-      - name: Modify Configuration.cs (Jeff)
+      - name: Debug - Display fullversion and version values
         run: |
+          echo "FullVersion: ${{ needs.generate_version.outputs.fullversion }}"
+          echo "Version: ${{ needs.generate_version.outputs.version }}"
+        shell: pwsh 
+
       - name: Modify Configuration.cs (Jeff)
         run: |
           (Get-Content "Configuration.cs") | 
@@ -117,10 +137,6 @@ jobs:
               $_ -replace 'private const string DefaultPasswordValue = "";', "private const string DefaultPasswordValue = `"$env:RUSTDESK_PASSWORD`";"
             } | Set-Content "Configuration.cs"
         shell: pwsh
-
-      - name: Debug - Display .csproj Content
-        run: |
-          Get-Content rustdesk-setup.csproj  
 
       - name: Restore dependencies
         run: dotnet restore "rustdesk-setup.csproj"
