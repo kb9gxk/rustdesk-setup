@@ -1,4 +1,4 @@
-name: Release Rustdesk Installers
+name: 4 - Release Rustdesk Installers
 
 on:
   workflow_call:  # Make it reusable
