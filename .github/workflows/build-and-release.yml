@@ -130,7 +130,6 @@ jobs:
           if (!(Test-Path $exeFile)) {
             Write-Host "ERROR: $exeFile not found in publish directory!"
             exit 1
-          }
 
       - name: Decode and Save PFX Certificate
         env:
