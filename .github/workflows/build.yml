@@ -26,9 +26,9 @@ jobs:
       - name: Modify Configuration.cs (Jeff)
         if: matrix.build_type == 'jeff'
         run: >
-          (Get-Content Configuration.cs) -replace 'internal static string RustdeskCfg { get; set; };', "internal static string RustdeskCfg { get; set; } = `"${{ secrets.RUSTDESK_CONFIG }}`";" | Set-Content Configuration.cs
+          (Get-Content Configuration.cs) -replace 'private const string DefaultConfigValue = "";', "private const string DefaultConfigValue = `"${{ secrets.RUSTDESK_CONFIG }}`";" | Set-Content Configuration.cs
 
-          (Get-Content Configuration.cs) -replace 'internal static string RustdeskPw { get; set; };', "internal static string RustdeskPw { get; set; } = `"${{ secrets.RUSTDESK_PASSWORD }}`";" | Set-Content Configuration.cs
+          (Get-Content Configuration.cs) -replace 'private const string DefaultPasswordValue = "";', "private const string DefaultConfigValue = `"${{ secrets.RUSTDESK_PASSWORD }}`";" | Set-Content Configuration.cs
         shell: pwsh
 
       - name: Restore dependencies
