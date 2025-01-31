@@ -1,12 +1,10 @@
 name: 3 - Sign Rustdesk Installers
 
 on:
-  workflow_call:  # Allows execution when called by master.yml
-  workflow_dispatch:  # Allows manual triggering
-  workflow_run:
-    workflows: ["Build Rustdesk Installers"]
-    types:
-      - completed
+  workflow_call:
+    secrets:
+      CODE_SIGNING_CERTIFICATE: ${{ secrets.CODE_SIGNING_CERTIFICATE }}
+      CODE_SIGNING_CERTIFICATE_PASSWORD: ${{ secrets.CODE_SIGNING_CERTIFICATE_PASSWORD }}
 
 jobs:
   sign:
