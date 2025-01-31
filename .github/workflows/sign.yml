@@ -1,4 +1,4 @@
-name: Sign and Release Rustdesk Installers
+name: Sign Rustdesk Installers
 
 on:
   workflow_call:  # Allows execution when called by master.yml
@@ -12,10 +12,6 @@ jobs:
   sign:
     runs-on: windows-latest
     steps:
-      
-      - name: Check if CODE_SIGNING_CERTIFICATE is available
-        run: echo "CODE_SIGNING_CERTIFICATE: ${{ secrets.CODE_SIGNING_CERTIFICATE }}"
-        
       - name: Download Artifacts (Default Build)
         uses: actions/download-artifact@v4
         with:
@@ -28,27 +24,11 @@ jobs:
           name: 'rustdesk-installer-jeff'
           path: artifacts
 
-      - name: Ensure CODE_SIGNING_CERTIFICATE is set
-        shell: bash
-        run: |
-          if [ -z "${{ secrets.CODE_SIGNING_CERTIFICATE }}" ]; then
-            echo "ERROR: CODE_SIGNING_CERTIFICATE secret is not set or is empty."
-            exit 1
-          else
-            echo "CODE_SIGNING_CERTIFICATE is set."
-          fi
-
       - name: Decode and Save Code Signing Certificate
         shell: bash
         run: |
           echo "${{ secrets.CODE_SIGNING_CERTIFICATE }}" | base64 -d > artifacts/code-signing.pfx
-          # Verify that the file is not empty
-          if [ ! -s artifacts/code-signing.pfx ]; then
-            echo "ERROR: The decoded certificate is empty or failed to decode."
-            exit 1
-          else
-            echo "Certificate decoded successfully and is not empty."
-          fi
+          echo "Certificate decoded successfully"
 
       - name: Check if pfx file exists
         shell: bash
@@ -80,7 +60,7 @@ jobs:
 
       - name: Sign Executables
         env:
-          CODE_SIGNING_CERTIFICATE_PASSWORD: '${{ secrets.CODE_SIGNING_CERTIFIATE_PASSWORD }}'
+          CODE_SIGNING_CERTIFICATE_PASSWORD: '${{ secrets.CODE_SIGNING_CERTIFICATE_PASSWORD }}'
         shell: pwsh
         run: |
           Write-Host "Attempting to sign the executables..."
