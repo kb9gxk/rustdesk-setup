@@ -63,24 +63,18 @@ jobs:
           $csproj.Save($csprojPath)
         shell: pwsh
 
-      - name: Determine Default Branch
-        id: get_branch
-        run: echo "default_branch=$(git remote show origin | grep 'HEAD branch' | awk '{print $NF}')" >> $GITHUB_ENV
-        shell: bash
-
       - name: Commit and Push Changes
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git checkout ${{ env.default_branch }}
-          git pull origin ${{ env.default_branch }}
+          git checkout main
+          git pull origin main
           git add rustdesk-setup.csproj
-          git commit -m "Update versions to ${{ env.formatted_time }}" || echo "No changes to commit"
-          git push origin ${{ env.default_branch }}
+          git commit -m "Update versions to ${{ env.formatted_time }}"
+          git push origin main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: pwsh
-
 
       - name: Modify Configuration.cs (Jeff)
         if: matrix.build_type == 'jeff'
@@ -107,6 +101,14 @@ jobs:
           }
           $newExeName = "publish/rustdesk-setup${{ matrix.build_type == 'jeff' && '-jeff' || '' }}.exe"
           Move-Item -Path $exeFile -Destination $newExeName -Force
+        shell: pwsh
+
+      - name: Decode and Save Code Signing Certificate
+        env:
+          CODE_SIGNING_CERTIFICATE: ${{ secrets.CODE_SIGNING_CERTIFICATE }}
+        run: |
+          $certBytes = [System.Convert]::FromBase64String("$env:CODE_SIGNING_CERTIFICATE")
+          Set-Content -Path "codesigning.pfx" -Value $certBytes -Encoding Byte
         shell: pwsh
 
       - name: Sign the Executable
