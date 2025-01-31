@@ -7,8 +7,8 @@ jobs:
   full_build_default:
     runs-on: windows-latest
     outputs:
-      formatted_time: ${{ steps.timestamp.outputs.formatted_time }}
-      formatted_time2: ${{ steps.timestamp.outputs.formatted_time2 }}
+      fullversion: ${{ steps.timestamp.outputs.fullversion }}
+      version: ${{ steps.timestamp.outputs.version }}
     steps:
       - name: Validate Required Secrets
         run: |
@@ -42,14 +42,11 @@ jobs:
           $chicagoTimeZone = [System.TimeZoneInfo]::FindSystemTimeZoneById("Central Standard Time")
           $chicagoTime = [System.TimeZoneInfo]::ConvertTimeFromUtc((Get-Date).ToUniversalTime(), $chicagoTimeZone)
           
-          $formatted_time = $chicagoTime.ToString("yyyy.MM.dd.HHmm")
-          $formatted_time2 = $chicagoTime.ToString("yyyy.MM.dd")
+          $fullversion = $chicagoTime.ToString("yyyy.MM.dd.HHmm")
+          $version = $chicagoTime.ToString("yyyy.MM.dd")
 
-          echo "formatted_time=$formatted_time" >> $GITHUB_ENV
-          echo "formatted_time2=$formatted_time2" >> $GITHUB_ENV
-
-          echo "formatted_time=$formatted_time" >> $GITHUB_ENV
-          echo "formatted_time2=$formatted_time2" >> $GITHUB_ENV
+          echo "fullversion=$fullversion" >> $GITHUB_ENV
+          echo "version=$version" >> $GITHUB_ENV
 
       - name: Modify rustdesk-setup.csproj for Versioning (Default)
         run: |
@@ -68,7 +65,7 @@ jobs:
               $assemblyVersionElement = $xml.CreateElement("AssemblyVersion")
               $propGroup.AppendChild($assemblyVersionElement)
           }
-          $assemblyVersionElement.InnerText = "${{ env.formatted_time }}"
+          $assemblyVersionElement.InnerText = "${{ env.fullversion }}"
 
            # Create or update FileVersion element
           $fileVersionElement = $propGroup.SelectSingleNode("FileVersion")
@@ -76,7 +73,7 @@ jobs:
               $fileVersionElement = $xml.CreateElement("FileVersion")
               $propGroup.AppendChild($fileVersionElement)
           }
-          $fileVersionElement.InnerText = "${{ env.formatted_time }}"
+          $fileVersionElement.InnerText = "${{ env.fullversion }}"
 
           # Create or update Version element
           $versionElement = $propGroup.SelectSingleNode("Version")
@@ -84,10 +81,14 @@ jobs:
               $versionElement = $xml.CreateElement("Version")
               $propGroup.AppendChild($versionElement)
           }
-          $versionElement.InnerText = "${{ env.formatted_time2 }}"
+          $versionElement.InnerText = "${{ env.version }}"
 
           $xml.Save($projectFile)
         shell: pwsh
+
+      - name: Debug - Display .csproj Content
+        run: |
+          Get-Content rustdesk-setup.csproj  
 
       - name: Restore dependencies
         run: dotnet restore "rustdesk-setup.csproj"
@@ -110,8 +111,8 @@ jobs:
     env:
       RUSTDESK_CONFIG: ${{ secrets.RUSTDESK_CONFIG }}
       RUSTDESK_PASSWORD: ${{ secrets.RUSTDESK_PASSWORD }}
-      FORMATTED_TIME: ${{ needs.full_build_default.outputs.formatted_time }}
-      FORMATTED_TIME2: ${{ needs.full_build_default.outputs.formatted_time2 }}
+      FULLVERSION: ${{ needs.full_build_default.outputs.fullversion }}
+      VERSION: ${{ needs.full_build_default.outputs.version }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -144,7 +145,7 @@ jobs:
               $assemblyVersionElement = $xml.CreateElement("AssemblyVersion")
               $propGroup.AppendChild($assemblyVersionElement)
           }
-          $assemblyVersionElement.InnerText = "${{ env.formatted_time }}"
+          $assemblyVersionElement.InnerText = "${{ env.FULLVERSION }}"
 
            # Create or update FileVersion element
           $fileVersionElement = $propGroup.SelectSingleNode("FileVersion")
@@ -152,7 +153,7 @@ jobs:
               $fileVersionElement = $xml.CreateElement("FileVersion")
               $propGroup.AppendChild($fileVersionElement)
           }
-          $fileVersionElement.InnerText = "${{ env.formatted_time }}"
+          $fileVersionElement.InnerText = "${{ env.FULLVERSION }}"
 
           # Create or update Version element
           $versionElement = $propGroup.SelectSingleNode("Version")
@@ -160,10 +161,14 @@ jobs:
               $versionElement = $xml.CreateElement("Version")
               $propGroup.AppendChild($versionElement)
           }
-          $versionElement.InnerText = "${{ env.formatted_time2 }}"
+          $versionElement.InnerText = "${{ env.VERSION }}"
 
           $xml.Save($projectFile)
         shell: pwsh
+
+      - name: Debug - Display .csproj Content
+        run: |
+          Get-Content rustdesk-setup.csproj  
 
       - name: Restore dependencies
         run: dotnet restore "rustdesk-setup.csproj"
@@ -246,12 +251,12 @@ sign_and_release:
             exit 1
           }
 
-          echo "::set-output name=signtool_path::$signtoolPath"
+          echo "signtool_path=$signtoolPath" >> $GITHUB_ENV
         shell: pwsh
 
       - name: Sign Executables
         run: |
-          Get-ChildItem -Path "artifacts" -Filter "*.exe" | ForEach-Object {
+          Get-ChildItem -Path "artifacts" -Recurse -Filter "*.exe" | ForEach-Object {
             try {
                 Start-Process -FilePath "${{ steps.find_signtool.outputs.signtool_path }}" -ArgumentList "sign", "/fd", "SHA256", "/f", "artifacts/code-signing.pfx", "/p", "${{ secrets.CODE_SIGNING_CERTIFICATE_PASSWORD }}", "/t", "http://timestamp.digicert.com", "/v", $_.FullName -Wait -ErrorAction Stop
                 Write-Host "✅ Successfully signed $($_.FullName)"
@@ -274,8 +279,8 @@ sign_and_release:
         env:
           GITHUB_TOKEN: '${{ secrets.RELEASE_TOKEN }}'
         with:
-          tag_name: "v${{ needs.full_build_default.outputs.formatted_time }}"
-          release_name: "Rustdesk Installer Release ${{ needs.full_build_default.outputs.formatted_time }}"
+          tag_name: "v${{ needs.full_build_default.outputs.fullversion }}"
+          release_name: "Rustdesk Installer Release ${{ needs.full_build_default.outputs.fullversion }}"
           body: "This release contains the signed Rustdesk installers."
           draft: false
           prerelease: false
