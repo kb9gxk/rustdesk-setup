@@ -10,18 +10,10 @@ jobs:
   build:
     needs: prep
     uses: ./.github/workflows/build.yml
-    with:
-      secrets:
-        RUSTDESK_CONFIG: ${{ secrets.RUSTDESK_CONFIG }}
-        RUSTDESK_PASSWORD: ${{ secrets.RUSTDESK_PASSWORD }}
 
   sign:
     needs: build
     uses: ./.github/workflows/sign.yml
-    with:
-      secrets:
-        CODE_SIGNING_CERTIFICATE: ${{ secrets.CODE_SIGNING_CERTIFICATE }}
-        CODE_SIGNING_CERTIFICATE_PASSWORD: ${{ secrets.CODE_SIGNING_CERTIFICATE_PASSWORD }}
 
   release:
     needs: sign
