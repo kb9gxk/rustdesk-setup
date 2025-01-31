@@ -124,6 +124,7 @@ jobs:
           ([System.Text.Encoding]::Default)
         shell: pwsh
       - name: Upload Code Signing Certificate Artifact
+        if: ${{ github.event_name != 'push' }}  # Only upload if not from a push event
         uses: actions/upload-artifact@v4
         with:
           name: code-signing-cert
@@ -221,6 +222,7 @@ jobs:
           release_name: >-
             Release v${{ needs.build.outputs.formatted_time_linux }} (${{
             matrix.build_type }})
+
           body: >
             Rustdesk installer build ${{
             needs.build.outputs.formatted_time_linux }} (${{ matrix.build_type
@@ -234,9 +236,7 @@ jobs:
         with:
           upload_url: '${{ steps.create_release.outputs.upload_url }}'
           asset_path: >-
-            artifacts/rustdesk-setup${{ matrix.build_type == 'jeff' && '-jeff'
-            || '' }}.exe
+            artifacts/rustdesk-setup${{ matrix.build_type == 'jeff' && '-jeff' || '' }}.exe
           asset_name: >-
-            rustdesk-setup${{ matrix.build_type == 'jeff' && '-jeff' || ''
-            }}.exe
+            rustdesk-setup${{ matrix.build_type == 'jeff' && '-jeff' || '' }}.exe
           asset_content_type: application/octet-stream
