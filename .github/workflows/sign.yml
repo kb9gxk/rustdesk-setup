@@ -1,33 +1,30 @@
 name: Sign Rustdesk Installers
 
 on:
+  workflow_call:  # Make it reusable
   workflow_dispatch:  # Allows manual triggering
 
 jobs:
   sign:
     runs-on: windows-latest
     steps:
-      # Download Artifacts (Default Build)
       - name: Download Artifacts (Default Build)
         uses: actions/download-artifact@v4
         with:
           name: 'rustdesk-installer-default'
           path: artifacts
 
-      # Download Artifacts (Jeff Build)
       - name: Download Artifacts (Jeff Build)
         uses: actions/download-artifact@v4
         with:
           name: 'rustdesk-installer-jeff'
           path: artifacts
 
-      # Decode and Save Code Signing Certificate (from secrets)
       - name: Decode and Save Code Signing Certificate
         shell: bash
         run: |
           echo "${{ secrets.CODE_SIGNING_CERTIFICATE }}" | base64 -d > artifacts/code-signing.pfx
 
-      # Locate signtool.exe
       - name: Locate signtool.exe
         id: find_signtool
         shell: pwsh
@@ -43,7 +40,6 @@ jobs:
 
           echo "SIGNSUCCESS_PATH=$signtoolPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8
 
-      # Sign Executables
       - name: Sign Executables
         env:
           CODE_SIGNING_CERTIFICATE_PASSWORD: '${{ secrets.CODE_SIGNING_CERTIFICATE_PASSWORD }}'
@@ -53,7 +49,6 @@ jobs:
             & "${{ env.SIGNSUCCESS_PATH }}" sign /fd SHA256 /f "artifacts/code-signing.pfx" /p "$env:CODE_SIGNING_CERTIFICATE_PASSWORD" /t http://timestamp.digicert.com /v $_.FullName
           }
 
-      # Upload Signed Installers
       - name: Upload Signed Installers
         uses: actions/upload-artifact@v4
         with:
