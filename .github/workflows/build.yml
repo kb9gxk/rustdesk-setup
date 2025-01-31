@@ -21,12 +21,9 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: prep-artifacts
-          path: .
+          path: . 
 
       - name: Set Environment Variables
-        env:
-          RUSTDESK_CONFIG: ${{ secrets.RUSTDESK_CONFIG }}
-          RUSTDESK_PASSWORD: ${{ secrets.RUSTDESK_PASSWORD }}
         run: |
           echo "RUSTDESK_CONFIG=${{ secrets.RUSTDESK_CONFIG }}" >> $GITHUB_ENV
           echo "RUSTDESK_PASSWORD=${{ secrets.RUSTDESK_PASSWORD }}" >> $GITHUB_ENV
@@ -57,13 +54,10 @@ jobs:
         run: dotnet restore "rustdesk-setup.csproj"
 
       - name: Build project
-        run: >-
-          dotnet build "rustdesk-setup.csproj" --configuration Release --no-restore
+        run: dotnet build "rustdesk-setup.csproj" --configuration Release --no-restore
 
       - name: Publish project
-        run: >-
-          dotnet publish "rustdesk-setup.csproj" --configuration Release
-          --output publish --no-build
+        run: dotnet publish "rustdesk-setup.csproj" --configuration Release --output publish --no-build
 
       - name: Rename Default Executable (for default build)
         if: matrix.build_type == 'default'
