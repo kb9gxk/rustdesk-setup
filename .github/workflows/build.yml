@@ -63,17 +63,14 @@ jobs:
       - name: Publish project
         run: dotnet publish "rustdesk-setup.csproj" --configuration Release --output publish --no-build
 
-      - name: Rename Default Executable (for default build)
-        if: matrix.build_type == 'default'
+      - name: Rename Executable
         shell: pwsh
         run: |
-          Rename-Item -Path "publish/rustdesk-setup.exe" -NewName "rustdesk-setup.exe"
-
-      - name: Rename Jeff Executable (for jeff build)
-        if: matrix.build_type == 'jeff'
-        shell: pwsh
-        run: |
-          Rename-Item -Path "publish/rustdesk-setup.exe" -NewName "rustdesk-setup-jeff.exe"
+          if ("${{ matrix.build_type }}" -eq "default") {
+            Rename-Item -Path "publish/rustdesk-setup.exe" -NewName "rustdesk-setup.exe"
+          } else {
+            Rename-Item -Path "publish/rustdesk-setup.exe" -NewName "rustdesk-setup-jeff.exe"
+          }
 
       - name: Upload Built Artifacts
         uses: actions/upload-artifact@v4
