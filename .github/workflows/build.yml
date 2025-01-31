@@ -24,11 +24,23 @@ jobs:
           path: .
 
       - name: Modify Configuration.cs (Jeff)
-        if: matrix.build_type == 'jeff'
-        run: >
-          (Get-Content Configuration.cs) -replace 'private const string DefaultConfigValue = "";', "private const string DefaultConfigValue = `"${{ secrets.RUSTDESK_CONFIG }}`";" | Set-Content Configuration.cs
+        env:
+          RUSTDESK_CONFIG: ${{ secrets.RUSTDESK_CONFIG }}
+          RUSTDESK_PASSWORD: ${{ secrets.RUSTDESK_PASSWORD }}
+        run: |
+          $configValue = ""
+          $passwordValue = ""
 
-          (Get-Content Configuration.cs) -replace 'private const string DefaultPasswordValue = "";', "private const string DefaultPasswordValue = `"${{ secrets.RUSTDESK_PASSWORD }}`";" | Set-Content Configuration.cs
+          if ("${{ matrix.build_type }}" -eq "jeff") {
+            $configValue = "private const string DefaultConfigValue = `"$env:RUSTDESK_CONFIG`";"
+            $passwordValue = "private const string DefaultPasswordValue = `"$env:RUSTDESK_PASSWORD`";"
+          } else {
+            $configValue = 'private const string DefaultConfigValue = "";'
+            $passwordValue = 'private const string DefaultPasswordValue = "";'
+          }
+
+          (Get-Content Configuration.cs) -replace 'private const string DefaultConfigValue = "";', $configValue | Set-Content Configuration.cs
+          (Get-Content Configuration.cs) -replace 'private const string DefaultPasswordValue = "";', $passwordValue | Set-Content Configuration.cs
         shell: pwsh
 
       - name: Restore dependencies
