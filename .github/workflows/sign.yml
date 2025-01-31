@@ -1,4 +1,4 @@
-name: Sign Rustdesk Installers
+name: 3 - Sign Rustdesk Installers
 
 on:
   workflow_call:  # Allows execution when called by master.yml
