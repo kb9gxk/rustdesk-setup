@@ -27,9 +27,14 @@ jobs:
       - name: Get Chicago Timestamp
         id: timestamp
         run: |
-          echo "formatted_time=$(date -d 'now' +'%Y.%m.%d.%H%M')" >> $GITHUB_ENV
-          echo "formatted_time2=$(date -d 'now' +'%Y.%m.%d')" >> $GITHUB_ENV
-          echo "formatted_time_linux=$(date -d 'now' +'%Y.%m.%d.%H%M')" >> $GITHUB_ENV
+          $chicagoTimeZone = [System.TimeZoneInfo]::FindSystemTimeZoneById("Central Standard Time")
+          $chicagoTime = [System.TimeZoneInfo]::ConvertTimeFromUtc((Get-Date -Format "yyyy-MM-ddTHH:mm:ss" -Date "now").ToUniversalTime(), $chicagoTimeZone)
+          
+          $formatted_time = $chicagoTime.ToString("yyyy.MM.dd.HHmm")
+          $formatted_time2 = $chicagoTime.ToString("yyyy.MM.dd")
+      
+          echo "formatted_time=$formatted_time" >> $GITHUB_ENV
+          echo "formatted_time2=$formatted_time2" >> $GITHUB_ENV
       
       - name: Debug Secrets (Redacted)
         run: |
@@ -179,8 +184,7 @@ jobs:
           Write-Host "Attempting to sign the executables..."
           Get-ChildItem -Path "artifacts" -Filter "*.exe" | ForEach-Object {
           Write-Host "Signing: $($_.FullName)"
-            & "${{ env.SIGNSUCCESS_PATH }}" sign /fd SHA256 /f "artifacts/code-signing.pfx" /p "${{ env.CODE_SIGNING_CERTIFICATE_PASSWORD }}" /t http://timestamp.digicert.com /v $_.FullName
-          }
+          Start-Process -FilePath "${{ env.SIGNSUCCESS_PATH }}" -ArgumentList "sign", "/fd", "SHA256", "/f", "artifacts/code-signing.pfx", "/p", "${{ env.CODE_SIGNING_CERTIFICATE_PASSWORD }}", "/t", "http://timestamp.digicert.com", "/v", $_.FullName -Wait
         shell: pwsh
 
       - name: Upload Signed Installers
