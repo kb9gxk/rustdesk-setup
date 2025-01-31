@@ -55,7 +55,8 @@ jobs:
 
       - name: Clean up previous build artifacts
         run: |
-          Remove-Item -Recurse -Force bin obj
+          Remove-Item -Recurse -Force .\bin
+          Remove-Item -Recurse -Force .\obj
         shell: pwsh
 
       - name: Build & Publish (Default)
@@ -105,7 +106,8 @@ jobs:
 
       - name: Clean up previous build artifacts
         run: |
-          Remove-Item -Recurse -Force bin obj
+          Remove-Item -Recurse -Force .\bin
+          Remove-Item -Recurse -Force .\obj
         shell: pwsh
 
       - name: Build & Publish (Jeff)
