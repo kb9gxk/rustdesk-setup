@@ -27,6 +27,7 @@ jobs:
       - name: Decode and Save Code Signing Certificate
         shell: bash
         run: |
+          echo "${{ secrets.CODE_SIGNING_CERTIFICATE }}" | base64 -d | head
           echo "${{ secrets.CODE_SIGNING_CERTIFICATE }}" | base64 -d > artifacts/code-signing.pfx
           echo "Certificate decoded successfully"
 
