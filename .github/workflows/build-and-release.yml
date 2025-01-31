@@ -45,7 +45,6 @@ jobs:
 
           [xml]$csproj = Get-Content $csprojPath
 
-
           if (-not $csproj.Project.PropertyGroup) {
             $propertyGroup = $csproj.CreateElement("PropertyGroup")
             $csproj.Project.AppendChild($propertyGroup)
@@ -53,12 +52,10 @@ jobs:
             $propertyGroup = $csproj.Project.PropertyGroup[0]
           }
 
-
           $propertyNames = @("FileVersion", "AssemblyVersion", "Version")
 
           $propertyValues = @("${{ env.formatted_time }}", "${{
           env.formatted_time }}", "${{ env.formatted_time2 }}")
-
 
           for ($i = 0; $i -lt $propertyNames.Length; $i++) {
             $prop = $propertyNames[$i]
@@ -74,7 +71,6 @@ jobs:
             # Set the value of the property
             $element.InnerText = $value
           }
-
 
           $csproj.Save($csprojPath)
         shell: pwsh
@@ -126,6 +122,38 @@ jobs:
           Set-Content -Path "codesigning.pfx" -Value $certBytes -Encoding
           ([System.Text.Encoding]::Default)
         shell: pwsh
+      - name: Debug the Code Signing Certificate
+        run: |
+          if (Test-Path "codesigning.pfx") {
+            Write-Host "Certificate file exists."
+            Get-Content "codesigning.pfx" -Head 10
+          } else {
+            Write-Host "Certificate file does not exist."
+            exit 1
+          }
+        shell: pwsh
+      - name: Debug Code Signing Password
+        run: |
+          if ($env:CODE_SIGNING_CERTIFICATE_PASSWORD) {
+            Write-Host "Password is set."
+          } else {
+            Write-Host "Password is not set."
+            exit 1
+          }
+        shell: pwsh
+      - name: Debug signtool path
+        run: |
+          Write-Host "Signtool path: $signtoolPath"
+        shell: pwsh
+      - name: Verify Code Signing Certificate Path
+        run: |
+          if (Test-Path "codesigning.pfx") {
+            Write-Host "Code Signing Certificate found!"
+          } else {
+            Write-Host "Code Signing Certificate NOT found!"
+            exit 1
+          }
+        shell: pwsh
       - name: Sign the Executable
         env:
           CODE_SIGNING_CERTIFICATE_PASSWORD: '${{ secrets.CODE_SIGNING_CERTIFICATE_PASSWORD }}'
@@ -135,7 +163,6 @@ jobs:
 
           $signtoolPath = Get-Command signtool -ErrorAction SilentlyContinue
 
-
           if (-not $signtoolPath) {
             $signtoolPath = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter signtool.exe | 
               Where-Object { $_.FullName -match "x64" } | 
@@ -144,20 +171,8 @@ jobs:
 
           if (-not $signtoolPath) {
             Write-Host "ERROR: signtool.exe not found!"
-          exit 1
-
-          }
-
-
-          # Check if the certificate file exists
-
-          if (-not (Test-Path "codesigning.pfx")) {
-            Write-Host "ERROR: Certificate file (codesigning.pfx) not found!"
             exit 1
           }
-
-
-          # Try signing the file
 
           try {
             & $signtoolPath sign /fd SHA256 /f codesigning.pfx /p "$env:CODE_SIGNING_CERTIFICATE_PASSWORD" /t http://timestamp.digicert.com /v $exeFile
