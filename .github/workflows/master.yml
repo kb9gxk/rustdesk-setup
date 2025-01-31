@@ -170,26 +170,26 @@ jobs:
           $signtoolPath = Get-ChildItem -Path "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter signtool.exe | 
             Where-Object { $_.FullName -match "x64" } | 
             Select-Object -First 1 -ExpandProperty FullName
-
+      
           if (-not $signtoolPath) {
             Write-Host "ERROR: signtool.exe not found!"
             exit 1
           }
+      
           Write-Host "SIGNSUCCESS: Found signtool.exe at $signtoolPath"
-          echo "SIGNSUCCESS_PATH=$signtoolPath" >> $GITHUB_ENV
+          echo "SIGNSUCCESS_PATH=$signtoolPath" >> $GITHUB_ENV  # Set the environment variable
 
       - name: Sign Executables
         if: matrix.build_type == 'default'
         run: |
           Write-Host "Attempting to sign the executables..."
-          Write-Host "SIGNSUCCESS_PATH: ${{ env.SIGNSUCCESS_PATH }}"  # Add this line to log the path
+          Write-Host "SIGNSUCCESS_PATH: ${{ env.SIGNSUCCESS_PATH }}"  # Confirm the path is set correctly
           Get-ChildItem -Path "artifacts" -Filter "*.exe" | ForEach-Object {
             Write-Host "Signing: $($_.FullName)"
-            # Verify that the path to signtool is not empty
             if ([string]::IsNullOrEmpty("${{ env.SIGNSUCCESS_PATH }}")) {
               Write-Host "ERROR: SIGNSUCCESS_PATH is empty, cannot sign the file."
               exit 1
-          }
+            }
             Start-Process -FilePath "${{ env.SIGNSUCCESS_PATH }}" -ArgumentList "sign", "/fd", "SHA256", "/f", "artifacts/code-signing.pfx", "/p", "${{ env.CODE_SIGNING_CERTIFICATE_PASSWORD }}", "/t", "http://timestamp.digicert.com", "/v", $_.FullName -Wait
           }
         shell: pwsh
