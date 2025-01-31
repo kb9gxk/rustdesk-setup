@@ -10,6 +10,10 @@ jobs:
   build:
     needs: prep
     uses: ./.github/workflows/build.yml
+    secrets: inherit  # Allows all secrets to be passed down
+    with:
+      rustdesk_config: ${{ secrets.RUSTDESK_CONFIG }}
+      rustdesk_password: ${{ secrets.RUSTDESK_PASSWORD }}
 
   sign:
     needs: build
