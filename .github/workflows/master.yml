@@ -30,7 +30,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
@@ -55,30 +54,26 @@ jobs:
         run: |
           $projectFile = "rustdesk-setup.csproj"
           [xml]$xml = Get-Content $projectFile
-          $version = "${{ env.formatted_time }}"
-          $version2 = "${{ env.formatted_time2 }}"
-
-          # Ensure PropertyGroup exists
-          if ($xml.Project.PropertyGroup -eq $null) {
-            $xml.Project.AppendChild($xml.CreateElement("PropertyGroup")) | Out-Null
+          
+          $propGroup = $xml.Project.PropertyGroup
+          if ($propGroup -eq $null) {
+            $propGroup = $xml.CreateElement("PropertyGroup")
+            $xml.Project.AppendChild($propGroup)
           }
 
-          # Update values
-          $xml.Project.PropertyGroup.AssemblyVersion = $version
-          $xml.Project.PropertyGroup.FileVersion = $version
-          $xml.Project.PropertyGroup.Version = $version2
+          $propGroup.AssemblyVersion = "${{ env.formatted_time }}"
+          $propGroup.FileVersion = "${{ env.formatted_time }}"
+          $propGroup.Version = "${{ env.formatted_time2 }}"
+
           $xml.Save($projectFile)
         shell: pwsh
 
       - name: Restore dependencies
         run: dotnet restore "rustdesk-setup.csproj"
 
-      - name: Build project (Default)
-        run: dotnet build "rustdesk-setup.csproj" --configuration Release --no-restore
-
-      - name: Publish project (Default)
+      - name: Build & Publish (Default)
         run: |
-          dotnet publish "rustdesk-setup.csproj" --configuration Release --output "publish" --no-build
+          dotnet publish "rustdesk-setup.csproj" --configuration Release --output "publish" --no-restore
           Rename-Item -Path "publish/rustdesk-setup.exe" -NewName "rustdesk-setup.exe"
         shell: pwsh
 
@@ -115,21 +110,26 @@ jobs:
         run: |
           $projectFile = "rustdesk-setup.csproj"
           [xml]$xml = Get-Content $projectFile
-          $xml.Project.PropertyGroup.AssemblyVersion = "$env:FORMATTED_TIME"
-          $xml.Project.PropertyGroup.FileVersion = "$env:FORMATTED_TIME"
-          $xml.Project.PropertyGroup.Version = "$env:FORMATTED_TIME2"
+          
+          $propGroup = $xml.Project.PropertyGroup
+          if ($propGroup -eq $null) {
+            $propGroup = $xml.CreateElement("PropertyGroup")
+            $xml.Project.AppendChild($propGroup)
+          }
+
+          $propGroup.AssemblyVersion = "$env:FORMATTED_TIME"
+          $propGroup.FileVersion = "$env:FORMATTED_TIME"
+          $propGroup.Version = "$env:FORMATTED_TIME2"
+
           $xml.Save($projectFile)
         shell: pwsh
 
-      - name: Restore dependencies (Jeff)
+      - name: Restore dependencies
         run: dotnet restore "rustdesk-setup.csproj"
 
-      - name: Build project (Jeff)
-        run: dotnet build "rustdesk-setup.csproj" --configuration Release --no-restore
-
-      - name: Publish project (Jeff)
+      - name: Build & Publish (Jeff)
         run: |
-          dotnet publish "rustdesk-setup.csproj" --configuration Release --output "publish" --no-build
+          dotnet publish "rustdesk-setup.csproj" --configuration Release --output "publish" --no-restore
           Rename-Item -Path "publish/rustdesk-setup.exe" -NewName "rustdesk-setup-jeff.exe"
         shell: pwsh
 
@@ -139,16 +139,10 @@ jobs:
           name: rustdesk-installer-jeff
           path: publish/rustdesk-setup-jeff.exe
 
-  sign_executables:
+  sign_and_release:
     runs-on: windows-latest
     needs: [full_build_default, full_build_jeff]
-    env:
-      CODE_SIGNING_CERTIFICATE: ${{ secrets.CODE_SIGNING_CERTIFICATE }}
-      CODE_SIGNING_CERTIFICATE_PASSWORD: ${{ secrets.CODE_SIGNING_CERTIFICATE_PASSWORD }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
       - name: Download Built Artifacts
         uses: actions/download-artifact@v4
         with:
@@ -163,11 +157,11 @@ jobs:
       - name: Sign Executables
         run: |
           Get-ChildItem -Path "artifacts" -Filter "*.exe" | ForEach-Object {
-            Start-Process -FilePath "${{ steps.find_signtool.outputs.signtool_path }}" -ArgumentList "sign", "/fd", "SHA256", "/f", "artifacts/code-signing.pfx", "/p", "${{ env.CODE_SIGNING_CERTIFICATE_PASSWORD }}", "/t", "http://timestamp.digicert.com", "/v", $_.FullName -Wait
+            Start-Process -FilePath "${{ steps.find_signtool.outputs.signtool_path }}" -ArgumentList "sign", "/fd", "SHA256", "/f", "artifacts/code-signing.pfx", "/p", "${{ secrets.CODE_SIGNING_CERTIFICATE_PASSWORD }}", "/t", "http://timestamp.digicert.com", "/v", $_.FullName -Wait
           }
         shell: pwsh
 
-      - name: Upload Signed Builds
+      - name: Upload Signed Installers
         uses: actions/upload-artifact@v4
         with:
           name: signed-rustdesk-installers
@@ -191,16 +185,6 @@ jobs:
           GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
         with:
           upload_url: '${{ steps.create_release.outputs.upload_url }}'
-          asset_path: artifacts/rustdesk-setup.exe
+          asset_path: artifacts/*.exe
           asset_name: rustdesk-setup.exe
-          asset_content_type: application/octet-stream
-
-      - name: Upload Signed Jeff Build to Release
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
-        with:
-          upload_url: '${{ steps.create_release.outputs.upload_url }}'
-          asset_path: artifacts/rustdesk-setup-jeff.exe
-          asset_name: rustdesk-setup-jeff.exe
           asset_content_type: application/octet-stream
