@@ -212,8 +212,8 @@ jobs:
         if: matrix.build_type == 'default'
         shell: pwsh
         run: |
-          Rename-Item -Path "release-artifacts/rustdesk-setup.exe" -NewName "rustdesk-setup.exe"
-          Rename-Item -Path "release-artifacts/rustdesk-setup-jeff.exe" -NewName "rustdesk-setup-jeff.exe"
+          Rename-Item -Path "artifacts/rustdesk-setup.exe" -NewName "rustdesk-setup.exe"
+          Rename-Item -Path "artifacts/rustdesk-setup-jeff.exe" -NewName "rustdesk-setup-jeff.exe"
 
       - name: Create GitHub Release
         if: matrix.build_type == 'default'
@@ -235,6 +235,6 @@ jobs:
           GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
         with:
           upload_url: '${{ steps.create_release.outputs.upload_url }}'
-          asset_path: release-artifacts/rustdesk-setup*.exe
+          asset_path: artifacts/rustdesk-setup*.exe
           asset_name: rustdesk-setup*.exe
           asset_content_type: application/octet-stream
