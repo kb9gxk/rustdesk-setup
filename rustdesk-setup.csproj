@@ -24,6 +24,9 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Release' or '$(Configuration)'=='Debug'">
     <DebugType>none</DebugType>
+    <AssemblyVersion>$(FullVersion)</AssemblyVersion>
+    <FileVersion>$(FullVersion)</FileVersion>
+    <Version>$(Version)</Version>
   </PropertyGroup>
   <ItemGroup>
     <None Remove="config.json" />
