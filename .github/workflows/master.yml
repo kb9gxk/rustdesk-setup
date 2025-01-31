@@ -173,12 +173,6 @@ jobs:
           Write-Host "SIGNSUCCESS: Found signtool.exe at $signtoolPath"
           echo "SIGNSUCCESS_PATH=$signtoolPath" >> $GITHUB_ENV
 
-      - name: List all artifact files
-        if: matrix.build_type == 'default'
-        run: |
-          echo "Listing all files in the artifacts directory"
-          Get-ChildItem -Attributes artifacts
-
       - name: Sign Executables
         if: matrix.build_type == 'default'
         run: |
