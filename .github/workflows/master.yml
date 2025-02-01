@@ -143,14 +143,15 @@ jobs:
             } | Set-Content "Configuration.cs"
         shell: pwsh
   
-      - name: Build After Configuration Change (Jeff)
+      - name: Clean up previous build artifacts
         run: |
-          dotnet build "rustdesk-setup.csproj" --configuration Release --no-restore --no-cache /p:AssemblyVersion=${{ needs.generate_version.outputs.fullversion }} /p:FileVersion=${{ needs.generate_version.outputs.fullversion }} /p:Version=${{ needs.generate_version.outputs.version }}
+          Remove-Item -Recurse -Force .\bin
+          Remove-Item -Recurse -Force .\obj
         shell: pwsh
 
-      - name: Publish (Jeff)
+      - name: Build & Publish (Jeff)
         run: |
-          dotnet publish "rustdesk-setup.csproj" --configuration Release --output "publish" --no-restore --no-cache /p:AssemblyVersion=${{ needs.generate_version.outputs.fullversion }} /p:FileVersion=${{ needs.generate_version.outputs.fullversion }} /p:Version=${{ needs.generate_version.outputs.version }}
+          dotnet publish "rustdesk-setup.csproj" --configuration Release --output "publish" /p:AssemblyVersion=${{ needs.generate_version.outputs.fullversion }} /p:FileVersion=${{ needs.generate_version.outputs.fullversion }} /p:Version=${{ needs.generate_version.outputs.version }}
           Rename-Item -Path "publish/rustdesk-setup.exe" -NewName "rustdesk-setup-jeff.exe"
         shell: pwsh
       
@@ -160,12 +161,6 @@ jobs:
           tree /F .  # For Windows
         shell: pwsh
        
-      - name: Clean up previous build artifacts
-        run: |
-          Remove-Item -Recurse -Force .\bin
-          Remove-Item -Recurse -Force .\obj
-        shell: pwsh
-
       - name: Upload Built Jeff Artifacts
         uses: actions/upload-artifact@v4
         with:
