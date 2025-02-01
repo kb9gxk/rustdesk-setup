@@ -160,7 +160,9 @@ jobs:
         with:
           name: built-files
           path: built-files.txt
-          retention-days: 1- name: Clean up previous build artifacts
+          retention-days: 1
+          
+      - name: Clean up previous build artifacts
         run: |
           Remove-Item -Recurse -Force .\bin
           Remove-Item -Recurse -Force .\obj
