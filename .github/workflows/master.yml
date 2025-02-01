@@ -163,10 +163,28 @@ jobs:
 
   sign_and_release:
     runs-on: windows-latest
-    needs:
-      - full_build_default
-      - full_build_jeff
+    needs: [ generate_version, full_build_default, full_build_jeff ]
     steps:
+      - name: Validate Required Secrets
+        run: |
+          $missing = @()
+          if (-not "${{ secrets.RUSTDESK_CONFIG }}") { $missing += "RUSTDESK_CONFIG" }
+          if (-not "${{ secrets.RUSTDESK_PASSWORD }}") { $missing += "RUSTDESK_PASSWORD" }
+          if (-not "${{ secrets.CODE_SIGNING_CERTIFICATE }}") { $missing += "CODE_SIGNING_CERTIFICATE" }
+          if (-not "${{ secrets.CODE_SIGNING_CERTIFICATE_PASSWORD }}") { $missing += "CODE_SIGNING_CERTIFICATE_PASSWORD" }
+          if (-not "${{ secrets.GITHUB_TOKEN }}") { $missing += "GITHUB_TOKEN" }
+          if (-not "${{ secrets.RELEASE_TOKEN }}") { $missing += "RELEASE_TOKEN" }
+          if (-not "${{ needs.generate_version.outputs.fullversion }}" ) { $missing += "FULLVERSION" }
+          if (-not "${{ needs.generate_version.outputs.version }}" ) { $missing += "VERSION" }
+          
+          if ($missing.Count -gt 0) {
+            Write-Host "❌ Missing required secrets: $($missing -join ', ')"
+            exit 1
+          } else {
+            Write-Host "✅ All required secrets are set!"
+          }
+        shell: pwsh
+        
       - name: Download Built Artifacts
         uses: actions/download-artifact@v4
         with:
@@ -199,24 +217,33 @@ jobs:
       - name: Locate signtool.exe
         id: find_signtool
         run: |
-          $possiblePaths = @(
-            "C:\Program Files (x86)\Windows Kits\10\bin\x64\signtool.exe",
-            "C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x64\signtool.exe"
-          )
-          $signtoolPath = $null
-          foreach ($path in $possiblePaths) {
-            if (Test-Path $path) {
-              $signtoolPath = $path
-              break
+          $vswherePath = "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" # Common path
+          if (!(Test-Path $vswherePath)) {
+            Write-Host "❌ vswhere.exe not found.  Trying alternative path."
+            $vswherePath = "C:\Program Files\Microsoft Visual Studio\Installer\vswhere.exe"
+            if (!(Test-Path $vswherePath)) {
+              Write-Host "❌ vswhere.exe not found."
+              exit 1
             }
           }
 
-          if (-not $signtoolPath) {
-            Write-Host "❌ signtool.exe not found in common locations."
+          $sdkPath = & $vswherePath -latest -products * -requires Microsoft.Component.WindowsSDK.Desktop | ConvertFrom-Json | Select-Object -ExpandProperty installationPath
+          if (-not $sdkPath) {
+            Write-Host "❌ Windows SDK not found."
             exit 1
           }
 
+          $signtoolPath = Join-Path $sdkPath "bin\10\x64\signtool.exe" # Construct signtool path
+              if (!(Test-Path $signtoolPath)) {
+                  $signtoolPath = Join-Path $sdkPath "bin\x64\signtool.exe"
+                  if (!(Test-Path $signtoolPath)) {
+                     Write-Host "❌ signtool.exe not found in the SDK path."
+                     exit 1
+                  }
+              }
+
           echo "signtool_path=$signtoolPath" >> $GITHUB_ENV
+          echo "::set-output name=signtool_path::$signtoolPath"
         shell: pwsh
 
       - name: Sign Executables
