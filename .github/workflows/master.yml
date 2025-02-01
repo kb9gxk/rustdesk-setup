@@ -63,6 +63,9 @@ jobs:
           echo "Version: ${{ needs.generate_version.outputs.version }}"
         shell: pwsh 
 
+      - name: Restore NuGet Packages
+        run: dotnet restore
+        
       - name: Build & Publish (Default)
         run: |
           dotnet publish "rustdesk-setup.csproj" --configuration Release --output "publish" --no-restore --no-cache /p:AssemblyVersion=${{ needs.generate_version.outputs.fullversion }} /p:FileVersion=${{ needs.generate_version.outputs.fullversion }} /p:Version=${{ needs.generate_version.outputs.version }}
@@ -136,6 +139,9 @@ jobs:
               $_ -replace 'private const string DefaultPasswordValue = "";', "private const string DefaultPasswordValue = `"$env:RUSTDESK_PASSWORD`";"
             } | Set-Content "Configuration.cs"
         shell: pwsh
+
+      - name: Restore NuGet Packages
+        run: dotnet restore
 
       - name: Build & Publish (Jeff)
         run: |
