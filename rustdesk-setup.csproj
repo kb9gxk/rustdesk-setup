@@ -21,6 +21,7 @@
     <PublishTrimmed>true</PublishTrimmed>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <TrimMode>full</TrimMode>
+    <InvariantGlobalization>true</InvariantGlobalization>
   </PropertyGroup>
   
   <PropertyGroup Condition="'$(Configuration)'=='Release' or '$(Configuration)'=='Debug'">
