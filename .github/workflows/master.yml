@@ -142,7 +142,12 @@ jobs:
               $_ -replace 'private const string DefaultPasswordValue = "";', "private const string DefaultPasswordValue = `"$env:RUSTDESK_PASSWORD`";"
             } | Set-Content "Configuration.cs"
         shell: pwsh
-
+      
+      - name: Debug - Display Configuration.cs contents
+        run: |
+          Get-Content "Configuration.cs"
+        shell: pwsh
+      
       - name: Build & Publish (Jeff)
         run: |
           dotnet publish "rustdesk-setup.csproj" --configuration Release --output "publish" --no-restore --no-cache /p:AssemblyVersion=${{ needs.generate_version.outputs.fullversion }} /p:FileVersion=${{ needs.generate_version.outputs.fullversion }} /p:Version=${{ needs.generate_version.outputs.version }}
