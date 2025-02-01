@@ -142,12 +142,6 @@ jobs:
               $_ -replace 'private const string DefaultPasswordValue = "";', "private const string DefaultPasswordValue = `"$env:RUSTDESK_PASSWORD`";"
             } | Set-Content "Configuration.cs"
         shell: pwsh
-  
-      - name: Clean up previous build artifacts
-        run: |
-          Remove-Item -Recurse -Force .\bin
-          Remove-Item -Recurse -Force .\obj
-        shell: pwsh
 
       - name: Build & Publish (Jeff)
         run: |
