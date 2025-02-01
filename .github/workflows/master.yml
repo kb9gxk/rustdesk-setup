@@ -214,12 +214,11 @@ jobs:
           }
         shell: pwsh
 
-      - name: Locate signtool.exe
+      - name: Locate signtool.exe using vswhere
         id: find_signtool
         run: |
-          $vswherePath = "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" # Common path
+          $vswherePath = "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe"
           if (!(Test-Path $vswherePath)) {
-            Write-Host "❌ vswhere.exe not found.  Trying alternative path."
             $vswherePath = "C:\Program Files\Microsoft Visual Studio\Installer\vswhere.exe"
             if (!(Test-Path $vswherePath)) {
               Write-Host "❌ vswhere.exe not found."
@@ -227,20 +226,36 @@ jobs:
             }
           }
 
-          $sdkPath = & $vswherePath -latest -products * -requires Microsoft.Component.WindowsSDK.Desktop | ConvertFrom-Json | Select-Object -ExpandProperty installationPath
-          if (-not $sdkPath) {
-            Write-Host "❌ Windows SDK not found."
+          $vswhereOutput = & $vswherePath -latest -products * -requires Microsoft.Component.WindowsSDK.Desktop 2>&1
+          $exitCode = $LastExitCode
+
+          if ($exitCode -ne 0) {
+            Write-Host "❌ vswhere failed with exit code $exitCode. Output: $vswhereOutput"
             exit 1
           }
 
-          $signtoolPath = Join-Path $sdkPath "bin\10\x64\signtool.exe" # Construct signtool path
-              if (!(Test-Path $signtoolPath)) {
-                  $signtoolPath = Join-Path $sdkPath "bin\x64\signtool.exe"
+          try {
+              $sdkPath = ($vswhereOutput | ConvertFrom-Json).installationPath
+          }
+          catch {
+              Write-Host "❌ Could not parse vswhere JSON output. Output: $vswhereOutput"
+              exit 1
+          }
+
+          if (-not $sdkPath) {
+            Write-Host "❌ Windows SDK installation path not found in vswhere output."
+            exit 1
+          }
+
+          $signtoolPath = Join-Path $sdkPath "bin\10\x64\signtool.exe"
                   if (!(Test-Path $signtoolPath)) {
-                     Write-Host "❌ signtool.exe not found in the SDK path."
-                     exit 1
+                      $signtoolPath = Join-Path $sdkPath "bin\x64\signtool.exe"
+                      if (!(Test-Path $signtoolPath)) {
+                         Write-Host "❌ signtool.exe not found in the SDK path."
+                         exit 1
+                      }
                   }
-              }
+
 
           echo "signtool_path=$signtoolPath" >> $GITHUB_ENV
           echo "::set-output name=signtool_path::$signtoolPath"
