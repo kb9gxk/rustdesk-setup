@@ -214,62 +214,26 @@ jobs:
           }
         shell: pwsh
 
-      - name: Locate signtool.exe using vswhere
+      - name: Locate signtool.exe in Windows SDK
         id: find_signtool
         run: |
-          $vswherePath = "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe"
-          if (!(Test-Path $vswherePath)) {
-            $vswherePath = "C:\Program Files\Microsoft Visual Studio\Installer\vswhere.exe"
-            if (!(Test-Path $vswherePath)) {
-              Write-Host "❌ vswhere.exe not found."
-              exit 1
-            }
-          }
-
-          $vswhereOutput = & $vswherePath -latest -products * -format json 2>&1
-          $exitCode = $LastExitCode
-
-          if ($exitCode -ne 0) {
-            Write-Host "❌ vswhere failed with exit code $exitCode. Output: $vswhereOutput"
-            exit 1
-          }
-          
-          # Check for empty output (no matching installations)
-          if ([string]::IsNullOrEmpty($vswhereOutput)) {
-            Write-Host "❌ No Visual Studio installation found with required Windows SDK component."
-            exit 1
-          }
-
-          # Output the full vswhere JSON response for debugging
-          Write-Host "vswhere Output: $vswhereOutput"
-
-          try {
-              $sdkPath = ($vswhereOutput | ConvertFrom-Json).installationPath
-          }
-          catch {
-              Write-Host "❌ Could not parse vswhere JSON output. Output: $vswhereOutput"
-              exit 1
-          }
-
-          if (-not $sdkPath) {
-            Write-Host "❌ Windows SDK installation path not found in vswhere output. Output: $vswhereOutput"
-            exit 1
-          }
-
-          # Search for signtool.exe more broadly within the SDK path
-          $signtoolPath = Get-ChildItem -Path $sdkPath -Recurse -Filter "signtool.exe" | 
-                          Sort-Object {$_.VersionInfo.FileVersion} -Descending |
-                          Select-Object -First 1 |
-                          Select-Object -ExpandProperty FullName
+          $sdkPath = "C:\Program Files (x86)\Windows Kits\10\bin\x64" # Or x86 if needed
+          $signtoolPath = Get-ChildItem -Path $sdkPath -Filter "signtool.exe" | Select-Object -First 1 | Select-Object -ExpandProperty FullName
 
           if (-not $signtoolPath) {
-            Write-Host "❌ signtool.exe not found in the SDK path."
+            $sdkPath = "C:\Program Files (x86)\Windows Kits\10\bin\x86" # Check x86 as well
+            $signtoolPath = Get-ChildItem -Path $sdkPath -Filter "signtool.exe" | Select-Object -First 1 | Select-Object -ExpandProperty FullName
+          }
+
+          if (-not $signtoolPath) {
+            Write-Host "❌ signtool.exe not found in the Windows SDK path.  Check if the SDK is installed correctly."
             exit 1
           }
 
           echo "signtool_path=$signtoolPath" >> $GITHUB_ENV
           echo "::set-output name=signtool_path::$signtoolPath"
         shell: pwsh
+  
       - name: Sign Executables
         run: |
           $signtoolPath = "${{ steps.find_signtool.outputs.signtool_path }}"
