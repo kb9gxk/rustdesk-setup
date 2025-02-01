@@ -142,21 +142,25 @@ jobs:
               $_ -replace 'private const string DefaultPasswordValue = "";', "private const string DefaultPasswordValue = `"$env:RUSTDESK_PASSWORD`";"
             } | Set-Content "Configuration.cs"
         shell: pwsh
-      
-      - name: Save Configuration.cs as an Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: configuration-debug
-          path: Configuration.cs
-          retention-days: 1  # Delete after 1 day for security
-      
+  
       - name: Build & Publish (Jeff)
         run: |
           dotnet publish "rustdesk-setup.csproj" --configuration Release --output "publish" --no-restore --no-cache /p:AssemblyVersion=${{ needs.generate_version.outputs.fullversion }} /p:FileVersion=${{ needs.generate_version.outputs.fullversion }} /p:Version=${{ needs.generate_version.outputs.version }}
           Rename-Item -Path "publish/rustdesk-setup.exe" -NewName "rustdesk-setup-jeff.exe"
         shell: pwsh
       
-      - name: Clean up previous build artifacts
+      - name: Save File List as an Artifact
+        run: |
+          tree /F > built-files.txt
+          tree /F .  # For Windows
+        shell: bash
+
+      - name: Upload Built Files List
+        uses: actions/upload-artifact@v4
+        with:
+          name: built-files
+          path: built-files.txt
+          retention-days: 1- name: Clean up previous build artifacts
         run: |
           Remove-Item -Recurse -Force .\bin
           Remove-Item -Recurse -Force .\obj
