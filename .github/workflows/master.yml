@@ -143,10 +143,12 @@ jobs:
             } | Set-Content "Configuration.cs"
         shell: pwsh
       
-      - name: Debug - Display Configuration.cs contents
-        run: |
-          Get-Content "Configuration.cs"
-        shell: pwsh
+      - name: Save Configuration.cs as an Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: configuration-debug
+          path: Configuration.cs
+          retention-days: 1  # Delete after 1 day for security
       
       - name: Build & Publish (Jeff)
         run: |
