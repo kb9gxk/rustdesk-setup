@@ -86,12 +86,14 @@ jobs:
 
   full_build_jeff:
     runs-on: windows-latest
-    needs: full_build_default
+    needs: [full_build_default, generate_version]
+    outputs:
+      fullversion: ${{ needs.generate_version.outputs.fullversion }}
+      version: ${{ needs.generate_version.outputs.version }}
     env:
       RUSTDESK_CONFIG: '${{ secrets.RUSTDESK_CONFIG }}'
       RUSTDESK_PASSWORD: '${{ secrets.RUSTDESK_PASSWORD }}'
-      FULLVERSION: '${{ needs.generate_version.outputs.fullversion }}'
-      VERSION: '${{ needs.generate_version.outputs.version }}'
+
     steps:
       - name: Validate Required Secrets
         run: |
