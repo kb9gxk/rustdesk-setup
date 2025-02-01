@@ -226,7 +226,7 @@ jobs:
             }
           }
 
-          $vswhereOutput = & $vswherePath -latest -products * -requires Microsoft.Component.WindowsSDK.Desktop -format json 2>&1
+          $vswhereOutput = & $vswherePath -latest -products * -format json 2>&1
           $exitCode = $LastExitCode
 
           if ($exitCode -ne 0) {
