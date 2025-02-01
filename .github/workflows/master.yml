@@ -240,6 +240,9 @@ jobs:
             exit 1
           }
 
+          # Output the full vswhere JSON response for debugging
+          Write-Host "vswhere Output: $vswhereOutput"
+
           try {
               $sdkPath = ($vswhereOutput | ConvertFrom-Json).installationPath
           }
@@ -253,19 +256,20 @@ jobs:
             exit 1
           }
 
-          $signtoolPath = Join-Path $sdkPath "bin\10\x64\signtool.exe"
-                  if (!(Test-Path $signtoolPath)) {
-                      $signtoolPath = Join-Path $sdkPath "bin\x64\signtool.exe"
-                      if (!(Test-Path $signtoolPath)) {
-                         Write-Host "❌ signtool.exe not found in the SDK path."
-                         exit 1
-                      }
-                  }
+          # Search for signtool.exe more broadly within the SDK path
+          $signtoolPath = Get-ChildItem -Path $sdkPath -Recurse -Filter "signtool.exe" | 
+                          Sort-Object {$_.VersionInfo.FileVersion} -Descending |
+                          Select-Object -First 1 |
+                          Select-Object -ExpandProperty FullName
+
+          if (-not $signtoolPath) {
+            Write-Host "❌ signtool.exe not found in the SDK path."
+            exit 1
+          }
 
           echo "signtool_path=$signtoolPath" >> $GITHUB_ENV
           echo "::set-output name=signtool_path::$signtoolPath"
         shell: pwsh
-
       - name: Sign Executables
         run: |
           $signtoolPath = "${{ steps.find_signtool.outputs.signtool_path }}"
