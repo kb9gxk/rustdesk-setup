@@ -143,7 +143,12 @@ jobs:
             } | Set-Content "Configuration.cs"
         shell: pwsh
   
-      - name: Build & Publish (Jeff)
+      - name: Build After Configuration Change (Jeff)
+        run: |
+          dotnet build "rustdesk-setup.csproj" --configuration Release --no-restore --no-cache /p:AssemblyVersion=${{ needs.generate_version.outputs.fullversion }} /p:FileVersion=${{ needs.generate_version.outputs.fullversion }} /p:Version=${{ needs.generate_version.outputs.version }}
+        shell: pwsh
+
+      - name: Publish (Jeff)
         run: |
           dotnet publish "rustdesk-setup.csproj" --configuration Release --output "publish" --no-restore --no-cache /p:AssemblyVersion=${{ needs.generate_version.outputs.fullversion }} /p:FileVersion=${{ needs.generate_version.outputs.fullversion }} /p:Version=${{ needs.generate_version.outputs.version }}
           Rename-Item -Path "publish/rustdesk-setup.exe" -NewName "rustdesk-setup-jeff.exe"
