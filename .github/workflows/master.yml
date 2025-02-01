@@ -63,9 +63,6 @@ jobs:
           echo "Version: ${{ needs.generate_version.outputs.version }}"
         shell: pwsh 
 
-      - name: Restore dependencies
-        run: dotnet restore "rustdesk-setup.csproj"
-
       - name: Build & Publish (Default)
         run: |
           dotnet publish "rustdesk-setup.csproj" --configuration Release --output "publish" --no-restore --no-cache /p:AssemblyVersion=${{ needs.generate_version.outputs.fullversion }} /p:FileVersion=${{ needs.generate_version.outputs.fullversion }} /p:Version=${{ needs.generate_version.outputs.version }}
@@ -128,9 +125,6 @@ jobs:
           echo "FullVersion: ${{ needs.generate_version.outputs.fullversion }}"
           echo "Version: ${{ needs.generate_version.outputs.version }}"
         shell: pwsh 
-
-      - name: Restore dependencies
-        run: dotnet restore "rustdesk-setup.csproj"
 
       - name: Modify Configuration.cs (Jeff)
         run: |
