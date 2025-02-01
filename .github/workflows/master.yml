@@ -129,6 +129,9 @@ jobs:
           echo "Version: ${{ needs.generate_version.outputs.version }}"
         shell: pwsh 
 
+      - name: Restore dependencies
+        run: dotnet restore "rustdesk-setup.csproj"
+
       - name: Modify Configuration.cs (Jeff)
         run: |
           (Get-Content "Configuration.cs") | 
@@ -139,9 +142,6 @@ jobs:
               $_ -replace 'private const string DefaultPasswordValue = "";', "private const string DefaultPasswordValue = `"$env:RUSTDESK_PASSWORD`";"
             } | Set-Content "Configuration.cs"
         shell: pwsh
-
-      - name: Restore dependencies
-        run: dotnet restore "rustdesk-setup.csproj"
 
       - name: Build & Publish (Jeff)
         run: |
