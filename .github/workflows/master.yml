@@ -226,11 +226,17 @@ jobs:
             }
           }
 
-          $vswhereOutput = & $vswherePath -latest -products * -requires Microsoft.Component.WindowsSDK.Desktop 2>&1
+          $vswhereOutput = & $vswherePath -latest -products * -requires Microsoft.Component.WindowsSDK.Desktop -format json 2>&1
           $exitCode = $LastExitCode
 
           if ($exitCode -ne 0) {
             Write-Host "❌ vswhere failed with exit code $exitCode. Output: $vswhereOutput"
+            exit 1
+          }
+          
+          # Check for empty output (no matching installations)
+          if ([string]::IsNullOrEmpty($vswhereOutput)) {
+            Write-Host "❌ No Visual Studio installation found with required Windows SDK component."
             exit 1
           }
 
@@ -243,7 +249,7 @@ jobs:
           }
 
           if (-not $sdkPath) {
-            Write-Host "❌ Windows SDK installation path not found in vswhere output."
+            Write-Host "❌ Windows SDK installation path not found in vswhere output. Output: $vswhereOutput"
             exit 1
           }
 
@@ -255,7 +261,6 @@ jobs:
                          exit 1
                       }
                   }
-
 
           echo "signtool_path=$signtoolPath" >> $GITHUB_ENV
           echo "::set-output name=signtool_path::$signtoolPath"
