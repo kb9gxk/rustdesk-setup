@@ -154,16 +154,7 @@ jobs:
           tree /F > built-files.txt
           tree /F .  # For Windows
         shell: pwsh
-
-      - name: Upload Built Files List
-        uses: actions/upload-artifact@v4
-        with:
-          name: built-files
-          path: |
-            built-files.txt
-            Configuration.cs
-          retention-days: 1
-          
+       
       - name: Clean up previous build artifacts
         run: |
           Remove-Item -Recurse -Force .\bin
@@ -345,3 +336,11 @@ jobs:
           asset_path: artifacts/jeff/rustdesk-setup-jeff.exe
           asset_name: rustdesk-setup-jeff.exe
           asset_content_type: application/octet-stream
+
+      - name: Delete Artifacts After Release
+        uses: geekyeggo/delete-artifact@v2
+        with:
+          name: |
+            rustdesk-installer-default
+            rustdesk-installer-jeff
+            signed-rustdesk-installers
