@@ -153,7 +153,7 @@ jobs:
         run: |
           tree /F > built-files.txt
           tree /F .  # For Windows
-        shell: bash
+        shell: pwsh
 
       - name: Upload Built Files List
         uses: actions/upload-artifact@v4
