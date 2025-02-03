@@ -12,8 +12,8 @@ namespace RustdeskSetup
         internal static string editionString = Configuration.UseStableVersion.HasValue && Configuration.UseStableVersion.Value ? "Stable" : "Nightly";
         internal static string githubStableApiUrl = "https://api.github.com/repos/rustdesk/rustdesk/releases/latest";
         internal static string githubNightlyApiUrl = "https://api.github.com/repos/rustdesk/rustdesk/releases/tags/nightly";
-        internal static string logFilePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), $"Rustdesk-{editionString}-Install.log");
-        internal static string RustdeskInfoFilePath = Path.Combine("c:\\", RustdeskInfoFileName);
+        internal static string logFilePath = "C:\\Rustdesk-" + editionString + "-Install.log"; // Modified log path
+        internal static string RustdeskInfoFilePath = "C:\\" + RustdeskInfoFileName; // Modified info path
         internal static StreamWriter? log;
         internal static string? rustdeskExe; // Will be dynamically set during installation
         internal static readonly HttpClient httpClient = new HttpClient();
