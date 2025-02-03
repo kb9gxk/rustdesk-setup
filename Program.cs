@@ -10,7 +10,7 @@ namespace RustdeskSetup
         static async Task Main(string[] args)
         {
             InstallationSettings.RedirectConsoleOutput();
-            InstallationSettings.HideWindow();
+            // InstallationSettings.HideWindow();  // Removed for testing
 
             CommandLineArgs parsedArgs = CommandLineArgs.Parse();
 
@@ -20,10 +20,42 @@ namespace RustdeskSetup
                 InstallationSettings.ResetConsoleOutput();
                 return;
             }
-             if (parsedArgs.GenerateDnsRecords)
+            if (parsedArgs.GenerateDnsRecords)
             {
                 DnsSettingsGenerator.GenerateAndSaveDnsSettings(parsedArgs.RustdeskPw);
                 InstallationSettings.ResetConsoleOutput();
+                return;
+            }
+
+            if (parsedArgs.ShouldTest) // New test logic
+            {
+                if (!parsedArgs.IsJeffBuild)
+                {
+                    Console.WriteLine("The --test argument is only valid for Jeff builds.");
+                    InstallationSettings.ResetConsoleOutput();
+                    return;
+                }
+                Console.WriteLine("Jeff Build Detected, testing DNS TXT records and decryption...");
+                Configuration.SetJeffDefaults();
+                string? dnsConfig = null;
+                string? dnsPassword = null;
+                string? dnsKey = null;
+                string? dnsIv = null;
+                try
+                {
+                     (dnsConfig, dnsPassword, dnsKey, dnsIv) = await DnsHelper.GetRustdeskConfigFromDnsAsync();
+                    Console.WriteLine($"DNS Config: {dnsConfig ?? "Not Found"}");
+                    Console.WriteLine($"DNS Password: {dnsPassword ?? "Not Found"}");
+                    Console.WriteLine($"DNS Key: {dnsKey ?? "Not Found"}");
+                    Console.WriteLine($"DNS IV: {dnsIv ?? "Not Found"}");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error during DNS lookup: {ex.Message}");
+                }
+                InstallationSettings.ResetConsoleOutput();
+                Console.WriteLine("Press any key to exit.");
+                Console.ReadKey();
                 return;
             }
 
