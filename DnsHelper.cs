@@ -32,18 +32,18 @@ namespace RustdeskSetup
                     string trimmedRecord = record.Trim();
                     InstallationSettings.log?.WriteLine($"Found DNS TXT record: {trimmedRecord}");
 
-                    if (trimmedRecord.StartsWith(ConfigRecordName))
+                    if (trimmedRecord.StartsWith(ConfigRecordName + "="))
                     {
-                        rustdeskCfg = trimmedRecord.Substring(ConfigRecordName.Length).TrimStart('=');
+                        rustdeskCfg = trimmedRecord.Substring(ConfigRecordName.Length + 1).Trim();
                     }
-                    else if (trimmedRecord.StartsWith(PasswordRecordName))
+                    else if (trimmedRecord.StartsWith(PasswordRecordName + "="))
                     {
-                        string encryptedPw = trimmedRecord.Substring(PasswordRecordName.Length).TrimStart('=');
+                        string encryptedPw = trimmedRecord.Substring(PasswordRecordName.Length + 1).Trim();
                         rustdeskPw = EncryptionHelper.Decrypt(encryptedPw);
                     }
-                    else if (trimmedRecord.StartsWith(KeyRecordName))
+                    else if (trimmedRecord.StartsWith(KeyRecordName + "="))
                     {
-                        encryptionKey = trimmedRecord.Substring(KeyRecordName.Length).TrimStart('=');
+                        encryptionKey = trimmedRecord.Substring(KeyRecordName.Length + 1).Trim();
                     }
                 }
             }
@@ -109,7 +109,7 @@ namespace RustdeskSetup
         private static byte[] BuildDnsQuery(string domain)
         {
             List<byte> packet = new();
-            
+
             // Transaction ID (random)
             packet.AddRange(new byte[] { 0x12, 0x34 });
 
@@ -185,7 +185,7 @@ namespace RustdeskSetup
                 // Read Type, Class, TTL (Skip these)
                 index += 8;
 
-                if(index + 2 >= response.Length) break; // Check if enough bytes left for Data Length
+                if (index + 2 >= response.Length) break; // Check if enough bytes left for Data Length
                 // Read Data Length
                 int txtLength = response[index + 1];
                 index += 2;
