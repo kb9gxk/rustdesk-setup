@@ -72,21 +72,31 @@ namespace RustdeskSetup
                 return string.Empty;
             }
 
-            byte[] cipherBytes = Convert.FromBase64String(cipherText);
-
-            using (Aes aesAlg = Aes.Create())
+            try
             {
-                aesAlg.Key = _key;
-                aesAlg.IV = _iv;
+                byte[] cipherBytes = Convert.FromBase64String(cipherText);
 
-                ICryptoTransform decryptor = aesAlg.CreateDecryptor(aesAlg.Key, aesAlg.IV);
-
-                using (MemoryStream msDecrypt = new MemoryStream(cipherBytes))
-                using (CryptoStream csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read))
-                using (StreamReader srDecrypt = new StreamReader(csDecrypt))
+                using (Aes aesAlg = Aes.Create())
                 {
-                    return srDecrypt.ReadToEnd();
+                    aesAlg.Key = _key;
+                    aesAlg.IV = _iv;
+
+                    ICryptoTransform decryptor = aesAlg.CreateDecryptor(aesAlg.Key, aesAlg.IV);
+
+                    using (MemoryStream msDecrypt = new MemoryStream(cipherBytes))
+                    using (CryptoStream csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read))
+                    using (StreamReader srDecrypt = new StreamReader(csDecrypt))
+                    {
+                        string decryptedText = srDecrypt.ReadToEnd();
+                        InstallationSettings.log?.WriteLine("Password decrypted successfully.");
+                        return decryptedText;
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                InstallationSettings.log?.WriteLine($"Error during password decryption: {ex.Message}");
+                return string.Empty; // Or handle the error as needed
             }
         }
     }
