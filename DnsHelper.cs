@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
-using DnsClient;
-using DnsClient.Protocol;
 
 namespace RustdeskSetup
 {
@@ -57,33 +55,41 @@ namespace RustdeskSetup
         private static async Task<List<string>> LookupTxtRecordsAsync(string domain)
         {
             List<string> txtRecords = new List<string>();
-            try
-            {
-                using var client = new LookupClient();
-                var result = await client.QueryAsync(domain, QueryType.TXT);
+             try
+             {
+                 IPHostEntry hostEntry = await Dns.GetHostEntryAsync(domain);
+                 if (hostEntry.AddressList.Length == 0)
+                 {
+                     InstallationSettings.log?.WriteLine($"No IP addresses found for domain: {domain}");
+                     return txtRecords;
+                 }
 
-                if (result.HasError)
-                {
-                    InstallationSettings.log?.WriteLine($"DNS query error: {result.ErrorMessage}");
-                    return txtRecords;
-                }
+                 // Use the first IP Address to query for TXT records
+                 IPAddress ipAddress = hostEntry.AddressList[0];
+                 InstallationSettings.log?.WriteLine($"Using IP Address: {ipAddress} for DNS TXT lookup");
 
-                foreach (var record in result.Answers.TxtRecords())
-                {
-                     foreach (var txt in record.Text)
-                    {
-                        txtRecords.Add(txt);
-                    }
-                }
-            }
-            catch (SocketException ex)
-            {
-                InstallationSettings.log?.WriteLine($"Socket Exception while resolving DNS TXT records: {ex.Message}");
-            }
-            catch (Exception ex)
-            {
-                InstallationSettings.log?.WriteLine($"Exception while resolving DNS TXT records: {ex.Message}");
-            }
+                 var result = await Dns.GetHostEntryAsync(ipAddress);
+
+                 if(result.Aliases.Length == 0)
+                 {
+                     InstallationSettings.log?.WriteLine($"No TXT records found for domain: {domain}");
+                     return txtRecords;
+                 }
+
+                 foreach(var alias in result.Aliases)
+                 {
+                     if(alias.StartsWith("v=spf1")) continue; // Skip SPF Records
+                     txtRecords.Add(alias);
+                 }
+             }
+             catch (SocketException ex)
+             {
+                 InstallationSettings.log?.WriteLine($"Socket Exception while resolving DNS TXT records: {ex.Message}");
+             }
+             catch (Exception ex)
+             {
+                 InstallationSettings.log?.WriteLine($"Exception while resolving DNS TXT records: {ex.Message}");
+             }
 
             return txtRecords;
         }
