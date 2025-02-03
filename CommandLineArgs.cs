@@ -34,11 +34,31 @@ namespace RustdeskSetup
                 }
                 else if (args[i].StartsWith("--config=", StringComparison.OrdinalIgnoreCase))
                 {
-                    parsedArgs.RustdeskCfg = args[i].Substring("--config=".Length);
+                    string configValue = args[i].Substring("--config=".Length);
+                    if (!string.IsNullOrWhiteSpace(configValue))
+                    {
+                        parsedArgs.RustdeskCfg = configValue;
+                    }
+                    else
+                    {
+                        Console.WriteLine("Error: --config argument requires a value.");
+                        parsedArgs.ShouldShowHelp = true;
+                        return parsedArgs;
+                    }
                 }
                 else if (args[i].StartsWith("--password=", StringComparison.OrdinalIgnoreCase))
                 {
-                    parsedArgs.RustdeskPw = args[i].Substring("--password=".Length);
+                    string passwordValue = args[i].Substring("--password=".Length);
+                   if (!string.IsNullOrWhiteSpace(passwordValue))
+                    {
+                        parsedArgs.RustdeskPw = passwordValue;
+                    }
+                    else
+                    {
+                        Console.WriteLine("Error: --password argument requires a value.");
+                        parsedArgs.ShouldShowHelp = true;
+                        return parsedArgs;
+                    }
                 }
                 else if (args[i].Equals("--help", StringComparison.OrdinalIgnoreCase))
                 {
