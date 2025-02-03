@@ -1,4 +1,4 @@
-name: Full Rustdesk Build and Release
+name: Build and Release
 
 on:
   workflow_dispatch:  # Allows manual triggering
