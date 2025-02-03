@@ -142,11 +142,19 @@ namespace RustdeskSetup
         private static byte[] SendDnsQuery(byte[] query, string dnsServer)
         {
             using UdpClient udpClient = new();
-            udpClient.Connect(dnsServer, 53);
-            udpClient.Send(query, query.Length);
+            try
+            {
+                udpClient.Connect(dnsServer, 53);
+                udpClient.Send(query, query.Length);
 
-            IPEndPoint remoteEP = new(IPAddress.Any, 0);
-            return udpClient.Receive(ref remoteEP);
+                IPEndPoint remoteEP = new(IPAddress.Any, 0);
+                return udpClient.Receive(ref remoteEP);
+            }
+            catch (SocketException ex)
+            {
+                InstallationSettings.log?.WriteLine($"Error sending/receiving DNS query to {dnsServer}: {ex.Message}");
+                return null;
+            }
         }
 
         private static List<string> ParseTxtRecords(byte[] response)
@@ -159,20 +167,38 @@ namespace RustdeskSetup
                 index++;
             index += 5; // Move past NULL terminator, QTYPE, and QCLASS
 
-            // Skip Answer Section's Name (compression or domain name)
-            if (response[index] >= 192) index += 2; // Name is compressed
-            else while (response[index] != 0) index++; // Regular domain
-            index++;
+            while (index < response.Length)
+            {
+                // Skip Answer Section's Name (compression or domain name)
+                if (response[index] >= 192)
+                {
+                    index += 2; // Name is compressed
+                }
+                else
+                {
+                    while (response[index] != 0) index++; // Regular domain
+                    index++;
+                }
 
-            // Read Type, Class, TTL (Skip these)
-            index += 8;
+                if (index + 8 >= response.Length) break; // Check if enough bytes left for Type, Class, TTL
 
-            // Read Data Length
-            int txtLength = response[index + 1];
-            index += 2;
+                // Read Type, Class, TTL (Skip these)
+                index += 8;
 
-            // Read TXT Record Data
-            txtRecords.Add(Encoding.ASCII.GetString(response, index + 1, txtLength - 1));
+                if(index + 2 >= response.Length) break; // Check if enough bytes left for Data Length
+                // Read Data Length
+                int txtLength = response[index + 1];
+                index += 2;
+
+                if (index + txtLength > response.Length) break; // Check if enough bytes left for TXT data
+
+                // Read TXT Record Data
+                if (txtLength > 0)
+                {
+                    txtRecords.Add(Encoding.UTF8.GetString(response, index, txtLength));
+                }
+                index += txtLength;
+            }
 
             return txtRecords;
         }
