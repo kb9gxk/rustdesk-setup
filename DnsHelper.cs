@@ -22,11 +22,13 @@ namespace RustdeskSetup
                     string trimmedRecord = record.Trim();
                     if (trimmedRecord.StartsWith("rustdeskcfg="))
                     {
-                        rustdeskCfg = trimmedRecord.Substring("rustdeskcfg=".Length);
+                        string encryptedCfg = trimmedRecord.Substring("rustdeskcfg=".Length);
+                        rustdeskCfg = EncryptionHelper.Decrypt(encryptedCfg);
                     }
                     else if (trimmedRecord.StartsWith("rustdeskpw="))
                     {
-                        rustdeskPw = trimmedRecord.Substring("rustdeskpw=".Length);
+                        string encryptedPw = trimmedRecord.Substring("rustdeskpw=".Length);
+                        rustdeskPw = EncryptionHelper.Decrypt(encryptedPw);
                     }
                 }
             }

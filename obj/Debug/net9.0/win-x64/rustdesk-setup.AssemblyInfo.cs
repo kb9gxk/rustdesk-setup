@@ -15,7 +15,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCopyrightAttribute("© 2023-2025")]
 [assembly: System.Reflection.AssemblyDescriptionAttribute("JP Custom Rustdesk Installer")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e2124cee0dd01b773095b0a8976d4edf9772c429")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+6e9d3450b4bbb9b6a420c3aaa0b7c88ef323d788")]
 [assembly: System.Reflection.AssemblyProductAttribute("rustdesk-setup")]
 [assembly: System.Reflection.AssemblyTitleAttribute("rustdesk-setup")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
