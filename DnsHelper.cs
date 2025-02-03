@@ -24,7 +24,7 @@ namespace RustdeskSetup
             {
                 InstallationSettings.log?.WriteLine("Starting DNS TXT record lookup for kb9gxk.net using nslookup...");
                 var txtRecords = await LookupTxtRecordsWithNsLookupAsync("kb9gxk.net");
-                 InstallationSettings.log?.WriteLine("Finished DNS TXT record lookup using nslookup.");
+                InstallationSettings.log?.WriteLine("Finished DNS TXT record lookup using nslookup.");
 
                 foreach (var record in txtRecords)
                 {
@@ -45,6 +45,10 @@ namespace RustdeskSetup
                         if (!string.IsNullOrEmpty(encryptionIV))
                         {
                             rustdeskPw = EncryptionHelper.Decrypt(encryptedPw, encryptionIV);
+                            if (rustdeskPw == null)
+                            {
+                                InstallationSettings.log?.WriteLine($"Warning: Password decryption failed.");
+                            }
                         }
                         else
                         {

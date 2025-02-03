@@ -65,10 +65,12 @@ namespace RustdeskSetup
                     if (!string.IsNullOrEmpty(dnsKey))
                     {
                         InstallationSettings.log?.WriteLine($"DNS Encryption Key found.");
+                        EncryptionHelper.SetEncryptionKey(dnsKey);
                     }
                     else
                     {
-                        InstallationSettings.log?.WriteLine("DNS Encryption Key not found.");
+                        InstallationSettings.log?.WriteLine("DNS Encryption Key not found. Using default key.");
+                        EncryptionHelper.SetEncryptionKey((string)null); // Set to null to trigger default key logic
                     }
                 }
                 catch (Exception ex)
