@@ -64,21 +64,9 @@ namespace RustdeskSetup
                 List<string> txtRecords = new();
                 try
                 {
-                    string command;
-                    string arguments;
+                    string command = "nslookup";
+                    string arguments = $"-query=TXT {domain}";
 
-                    if (OperatingSystem.IsWindows())
-                    {
-                        // Use PowerShell's Resolve-DnsName for Windows
-                        command = "powershell";
-                        arguments = $"-Command \"Resolve-DnsName -Name {domain} -Type TXT | Select-Object -ExpandProperty Strings\"";
-                    }
-                    else
-                    {
-                        // Use nslookup for Linux/macOS
-                        command = "nslookup";
-                        arguments = $"-query=TXT {domain}";
-                    }
 
                     InstallationSettings.log?.WriteLine($"🔍 Executing DNS lookup: {command} {arguments}");
                     string output = RunCommand(command, arguments);
