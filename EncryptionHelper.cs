@@ -80,7 +80,7 @@ namespace RustdeskSetup
             }
         }
 
-         internal static string Decrypt(string cipherText, string ivString)
+        internal static string Decrypt(string cipherText, string ivString, string? keyString)
         {
             if (string.IsNullOrEmpty(cipherText))
             {
@@ -97,9 +97,29 @@ namespace RustdeskSetup
                     return null;
                 }
 
+                // Get the key from the string if it exists, otherwise use the default key
+                byte[] key = _defaultKey;
+                if (!string.IsNullOrEmpty(keyString))
+                {
+                    try
+                    {
+                        key = Convert.FromBase64String(keyString);
+                        if (key.Length != 32)
+                        {
+                            InstallationSettings.log?.WriteLine($"Warning: DNS Key is not 32 bytes. Using default key.");
+                            key = _defaultKey;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        InstallationSettings.log?.WriteLine($"Error setting DNS Key: {ex.Message}. Using default key.");
+                        key = _defaultKey;
+                    }
+                }
+
                 using (Aes aesAlg = Aes.Create())
                 {
-                    aesAlg.Key = _key;
+                    aesAlg.Key = key; // Use the key passed in
                     aesAlg.IV = iv;
                     ICryptoTransform decryptor = aesAlg.CreateDecryptor(aesAlg.Key, aesAlg.IV);
 

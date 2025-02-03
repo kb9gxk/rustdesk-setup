@@ -42,9 +42,9 @@ namespace RustdeskSetup
                         {
                             encryptedPw = encryptedPw.Substring(1);
                         }
-                        if (!string.IsNullOrEmpty(encryptionIV))
+                        if (!string.IsNullOrEmpty(encryptionIV) && !string.IsNullOrEmpty(encryptionKey))
                         {
-                            rustdeskPw = EncryptionHelper.Decrypt(encryptedPw, Convert.ToBase64String(Convert.FromBase64String(encryptionIV)));
+                            rustdeskPw = EncryptionHelper.Decrypt(encryptedPw, Convert.ToBase64String(Convert.FromBase64String(encryptionIV)), encryptionKey);
                             if (rustdeskPw == null)
                             {
                                 InstallationSettings.log?.WriteLine($"Warning: Password decryption failed.");
