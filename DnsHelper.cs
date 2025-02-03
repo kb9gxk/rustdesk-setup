@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Net;
-using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace RustdeskSetup
@@ -24,9 +22,9 @@ namespace RustdeskSetup
 
             try
             {
-                InstallationSettings.log?.WriteLine("Starting DNS TXT record lookup for kb9gxk.net...");
-                var txtRecords = await LookupTxtRecordsAsync("kb9gxk.net");
-                InstallationSettings.log?.WriteLine("Finished DNS TXT record lookup.");
+                InstallationSettings.log?.WriteLine("Starting DNS TXT record lookup for kb9gxk.net using nslookup...");
+                var txtRecords = await LookupTxtRecordsWithNsLookupAsync("kb9gxk.net");
+                 InstallationSettings.log?.WriteLine("Finished DNS TXT record lookup using nslookup.");
 
                 foreach (var record in txtRecords)
                 {
@@ -40,7 +38,7 @@ namespace RustdeskSetup
                     else if (trimmedRecord.StartsWith(PasswordRecordName + "="))
                     {
                         string encryptedPw = trimmedRecord.Substring(PasswordRecordName.Length + 1).Trim();
-                         if (encryptedPw.StartsWith("="))
+                        if (encryptedPw.StartsWith("="))
                         {
                             encryptedPw = encryptedPw.Substring(1);
                         }
@@ -71,46 +69,49 @@ namespace RustdeskSetup
             return (rustdeskCfg, rustdeskPw, encryptionKey, encryptionIV);
         }
 
-        private static async Task<List<string>> LookupTxtRecordsAsync(string domain)
+        private static async Task<List<string>> LookupTxtRecordsWithNsLookupAsync(string domain)
         {
+            List<string> txtRecords = new List<string>();
             try
             {
-                IPHostEntry hostEntry = await Dns.GetHostEntryAsync(domain);
-                List<string> txtRecords = new();
-                foreach (IPAddress address in hostEntry.AddressList)
+                using (Process process = new Process())
                 {
-                    if (address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+                    process.StartInfo.FileName = "nslookup";
+                    process.StartInfo.Arguments = $"-type=txt {domain}";
+                    process.StartInfo.RedirectStandardOutput = true;
+                    process.StartInfo.RedirectStandardError = true;
+                    process.StartInfo.UseShellExecute = false;
+                    process.StartInfo.CreateNoWindow = true;
+
+                    process.Start();
+                    string output = await process.StandardOutput.ReadToEndAsync();
+                    string error = await process.StandardError.ReadToEndAsync();
+                    await process.WaitForExitAsync();
+
+                    if (process.ExitCode != 0)
                     {
-                         InstallationSettings.log?.WriteLine($"🔍 Performing DNS TXT lookup for {domain} at IP {address}...");
-                         IPHostEntry dnsEntry = await Dns.GetHostEntryAsync(domain);
-                         foreach (var dnsAddress in dnsEntry.AddressList)
-                         {
-                             if (dnsAddress.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
-                             {
-                                 try
-                                 {
-                                     var txtRecord = await Dns.GetHostEntryAsync(domain);
-                                     txtRecords.AddRange(txtRecord.Aliases);
-                                 }
-                                 catch (Exception ex)
-                                 {
-                                     InstallationSettings.log?.WriteLine($"❌ DNS TXT lookup failed for {domain} at {dnsAddress}: {ex.Message}");
-                                 }
-                             }
-                         }
+                        InstallationSettings.log?.WriteLine($"nslookup exited with code {process.ExitCode}. Error: {error}");
+                        return txtRecords; // Return empty list on error
+                    }
+                    // Regex to extract TXT record content
+                    string pattern = @"""([^""]*)""";
+                    MatchCollection matches = Regex.Matches(output, pattern);
+                    foreach (Match match in matches)
+                    {
+                        txtRecords.Add(match.Groups[1].Value);
+                    }
+
+                    if (txtRecords.Count == 0)
+                    {
+                        InstallationSettings.log?.WriteLine($"❌ No TXT records found for {domain} using nslookup.");
                     }
                 }
-                if (txtRecords.Count == 0)
-                {
-                    InstallationSettings.log?.WriteLine($"❌ No TXT records found for {domain}");
-                }
-                return txtRecords;
             }
             catch (Exception ex)
             {
-                InstallationSettings.log?.WriteLine($"❌ DNS TXT lookup failed: {ex.Message}");
-                return new List<string>();
+                InstallationSettings.log?.WriteLine($"❌ Error during nslookup: {ex.Message}");
             }
+            return txtRecords;
         }
     }
 }
