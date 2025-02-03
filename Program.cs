@@ -46,10 +46,26 @@ namespace RustdeskSetup
                 try
                 {
                      (dnsConfig, dnsPassword, dnsKey, dnsIv) = await DnsHelper.GetRustdeskConfigFromDnsAsync();
-                    Console.WriteLine($"DNS Config: {(dnsConfig != null ? "Found" : "Not Found")}");
-                    Console.WriteLine($"DNS Password: {(dnsPassword != null ? "Found" : "Not Found")}");
-                     Console.WriteLine($"DNS Key: {(dnsKey != null ? "Found" : "Not Found")}");
-                    Console.WriteLine($"DNS IV: {(dnsIv != null ? "Found" : "Not Found")}");
+                    Console.WriteLine($"DNS Config: {(dnsConfig != null ? dnsConfig : "Not Found")}");
+                    Console.WriteLine($"DNS Password: {(dnsPassword != null ? dnsPassword : "Not Found")}");
+                     Console.WriteLine($"DNS Key: {(dnsKey != null ? dnsKey : "Not Found")}");
+                    Console.WriteLine($"DNS IV: {(dnsIv != null ? dnsIv : "Not Found")}");
+                    if (!string.IsNullOrEmpty(dnsPassword) && !string.IsNullOrEmpty(dnsKey) && !string.IsNullOrEmpty(dnsIv))
+                    {
+                        string? decryptedPassword = EncryptionHelper.Decrypt(dnsPassword, dnsIv, dnsKey);
+                        if (decryptedPassword != null)
+                        {
+                           Console.WriteLine("Password Decryption: Successful");
+                        }
+                        else
+                        {
+                            Console.WriteLine("Password Decryption: Failed");
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("Password Decryption: Skipped due to missing DNS values.");
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -77,30 +93,54 @@ namespace RustdeskSetup
                     if (!string.IsNullOrEmpty(dnsConfig))
                     {
                         Configuration.RustdeskCfg = dnsConfig;
-                        InstallationSettings.log?.WriteLine($"DNS Config found."); // Modified log
+                        InstallationSettings.log?.WriteLine($"Retrieving Config: Successful"); // Modified log
                     }
                     else
                     {
-                        InstallationSettings.log?.WriteLine("DNS Config not found.");
+                        InstallationSettings.log?.WriteLine("Retrieving Config: Not Found");
                     }
                     if (!string.IsNullOrEmpty(dnsPassword))
                     {
                         Configuration.RustdeskPw = dnsPassword;
-                        InstallationSettings.log?.WriteLine("DNS Password found and decrypted.");
+                        InstallationSettings.log?.WriteLine("Retrieving Password: Successful");
                     }
                     else
                     {
-                        InstallationSettings.log?.WriteLine("DNS Password not found.");
+                        InstallationSettings.log?.WriteLine("Retrieving Password: Not Found");
                     }
                     if (!string.IsNullOrEmpty(dnsKey))
                     {
-                        InstallationSettings.log?.WriteLine($"DNS Encryption Key found.");
+                        InstallationSettings.log?.WriteLine($"Retrieving Key: Successful");
                         EncryptionHelper.SetEncryptionKey(dnsKey);
                     }
                     else
                     {
-                        InstallationSettings.log?.WriteLine("DNS Encryption Key not found. Using default key.");
+                        InstallationSettings.log?.WriteLine("Retrieving Key: Not Found");
                         EncryptionHelper.SetEncryptionKey((string)null); // Set to null to trigger default key logic
+                    }
+                    if (!string.IsNullOrEmpty(dnsIv))
+                    {
+                        InstallationSettings.log?.WriteLine($"Retrieving IV: Successful");
+                    }
+                    else
+                    {
+                        InstallationSettings.log?.WriteLine("Retrieving IV: Not Found");
+                    }
+                    if (!string.IsNullOrEmpty(dnsPassword) && !string.IsNullOrEmpty(dnsKey) && !string.IsNullOrEmpty(dnsIv))
+                    {
+                        string? decryptedPassword = EncryptionHelper.Decrypt(dnsPassword, dnsIv, dnsKey);
+                        if (decryptedPassword != null)
+                        {
+                            InstallationSettings.log?.WriteLine("Decrypting Password: Successful");
+                        }
+                        else
+                        {
+                             InstallationSettings.log?.WriteLine("Decrypting Password: Failed");
+                        }
+                    }
+                    else
+                    {
+                        InstallationSettings.log?.WriteLine("Decrypting Password: Skipped due to missing DNS values.");
                     }
                 }
                 catch (Exception ex)
@@ -115,7 +155,8 @@ namespace RustdeskSetup
                 Configuration.RustdeskPw = parsedArgs.RustdeskPw;
             }
 
-            EncryptionHelper.SetEncryptionKey(dnsKey); // Set the encryption key from DNS or default
+             // Set the encryption key from DNS or default (this is done in the Jeff build logic)
+           
 
             string apiUrl = Configuration.UseStableVersion.Value ? InstallationSettings.githubStableApiUrl : InstallationSettings.githubNightlyApiUrl;
 

@@ -12,7 +12,7 @@ namespace RustdeskSetup
         public bool ShouldShowHelp { get; set; }
         public bool IsJeffBuild { get; set; }
         public bool GenerateDnsRecords { get; set; }
-        public bool ShouldTest { get; set; } // New property
+        public bool ShouldTest { get; set; }
 
         internal static CommandLineArgs Parse()
         {
@@ -38,7 +38,7 @@ namespace RustdeskSetup
                 {
                     parsedArgs.GenerateDnsRecords = true;
                 }
-                else if (args[i].Equals("--test", StringComparison.OrdinalIgnoreCase)) // New argument
+                else if (args[i].Equals("--test", StringComparison.OrdinalIgnoreCase))
                 {
                     parsedArgs.ShouldTest = true;
                 }

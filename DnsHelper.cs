@@ -58,7 +58,6 @@ namespace RustdeskSetup
                             encryptionIV = trimmedRecord.Substring(IVRecordName.Length + 1).Trim();
                         }
                     }
-                    // Removed the else statement to not log ignored records
                 }
 
                 // Now that we have all the values, attempt to decrypt the password
