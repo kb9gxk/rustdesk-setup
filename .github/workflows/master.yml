@@ -1,7 +1,7 @@
 name: Build and Release
 
 on:
-  workflow_dispatch:  # Allows manual triggering
+  workflow_dispatch: # Allows manual triggering
 
 jobs:
   generate_version:
@@ -22,9 +22,9 @@ jobs:
           echo "::set-output name=fullversion::$fullversion"
           echo "::set-output name=version::$version"
 
-  full_build:
+  build_installer:
     runs-on: windows-latest
-    needs: generate_version  # Ensure this job runs after the version generation
+    needs: generate_version # Ensure this job runs after the version generation
     outputs:
       fullversion: ${{ needs.generate_version.outputs.fullversion }}
       version: ${{ needs.generate_version.outputs.version }}
@@ -38,7 +38,7 @@ jobs:
           if (-not "${{ secrets.RELEASE_TOKEN }}") { $missing += "RELEASE_TOKEN" }
           if (-not "${{ needs.generate_version.outputs.fullversion }}" ) { $missing += "FULLVERSION" }
           if (-not "${{ needs.generate_version.outputs.version }}" ) { $missing += "VERSION" }
-          
+
           if ($missing.Count -gt 0) {
             Write-Host "❌ Missing required secrets: $($missing -join ', ')"
             exit 1
@@ -61,11 +61,11 @@ jobs:
         run: |
           echo "FullVersion: ${{ needs.generate_version.outputs.fullversion }}"
           echo "Version: ${{ needs.generate_version.outputs.version }}"
-        shell: pwsh 
+        shell: pwsh
 
       - name: Restore NuGet Packages
         run: dotnet restore
-        
+
       - name: Build & Publish (Default)
         run: |
           dotnet publish "rustdesk-setup.csproj" -c Release -r win-x64 --output "publish" --no-restore --no-cache /p:AssemblyVersion=${{ needs.generate_version.outputs.fullversion }} /p:FileVersion=${{ needs.generate_version.outputs.fullversion }} /p:Version=${{ needs.generate_version.outputs.version }}
@@ -84,9 +84,12 @@ jobs:
           name: rustdesk-installer
           path: publish/rustdesk-setup.exe
 
-  sign_and_release:
+  sign_installer:
     runs-on: windows-latest
-    needs: [ generate_version, full_build ]
+    needs: [generate_version, build_installer]
+    outputs:
+      fullversion: ${{ needs.generate_version.outputs.fullversion }}
+      version: ${{ needs.generate_version.outputs.version }}
     steps:
       - name: Validate Required Secrets
         run: |
@@ -97,7 +100,7 @@ jobs:
           if (-not "${{ secrets.RELEASE_TOKEN }}") { $missing += "RELEASE_TOKEN" }
           if (-not "${{ needs.generate_version.outputs.fullversion }}" ) { $missing += "FULLVERSION" }
           if (-not "${{ needs.generate_version.outputs.version }}" ) { $missing += "VERSION" }
-          
+
           if ($missing.Count -gt 0) {
             Write-Host "❌ Missing required secrets: $($missing -join ', ')"
             exit 1
@@ -110,7 +113,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0 # Required to fetch all tags and history
-        
+
       - name: Download Built Artifacts
         uses: actions/download-artifact@v4
         with:
@@ -198,7 +201,7 @@ jobs:
           echo "signtool_path=$signtoolPath" >> $GITHUB_ENV
           echo "::set-output name=signtool_path::$signtoolPath"
         shell: pwsh
-  
+
       - name: Sign Executables
         run: |
           $signtoolPath = "${{ steps.find_signtool.outputs.signtool_path }}"
@@ -223,6 +226,39 @@ jobs:
         with:
           name: signed-rustdesk-installers
           path: artifacts/default/*.exe
+
+  create_release:
+    runs-on: windows-latest
+    needs: [generate_version, sign_installer]
+    steps:
+      - name: Validate Required Secrets
+        run: |
+          $missing = @()
+          if (-not "${{ secrets.CODE_SIGNING_CERTIFICATE }}") { $missing += "CODE_SIGNING_CERTIFICATE" }
+          if (-not "${{ secrets.CODE_SIGNING_CERTIFICATE_PASSWORD }}") { $missing += "CODE_SIGNING_CERTIFICATE_PASSWORD" }
+          if (-not "${{ secrets.GITHUB_TOKEN }}") { $missing += "GITHUB_TOKEN" }
+          if (-not "${{ secrets.RELEASE_TOKEN }}") { $missing += "RELEASE_TOKEN" }
+          if (-not "${{ needs.generate_version.outputs.fullversion }}" ) { $missing += "FULLVERSION" }
+          if (-not "${{ needs.generate_version.outputs.version }}" ) { $missing += "VERSION" }
+
+          if ($missing.Count -gt 0) {
+            Write-Host "❌ Missing required secrets: $($missing -join ', ')"
+            exit 1
+          } else {
+            Write-Host "✅ All required secrets are set!"
+          }
+        shell: pwsh
+
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # Required to fetch all tags and history
+
+      - name: Download Signed Installers
+        uses: actions/download-artifact@v4
+        with:
+          name: signed-rustdesk-installers
+          path: artifacts/default
 
       - name: Determine Previous Tag or Initial Commit
         id: get_previous_tag
@@ -259,10 +295,10 @@ jobs:
         id: create_release
         uses: actions/create-release@v1
         env:
-          GITHUB_TOKEN: '${{ secrets.RELEASE_TOKEN }}'
+          GITHUB_TOKEN: "${{ secrets.RELEASE_TOKEN }}"
         with:
-          tag_name: 'v${{ needs.generate_version.outputs.fullversion }}'
-          release_name: 'Rustdesk Installer Release ${{ needs.generate_version.outputs.fullversion }}'
+          tag_name: "v${{ needs.generate_version.outputs.fullversion }}"
+          release_name: "Rustdesk Installer Release ${{ needs.generate_version.outputs.fullversion }}"
           body: ${{ steps.generate_release_body.outputs.release_body }}
           draft: false
           prerelease: false
@@ -270,9 +306,9 @@ jobs:
       - name: Upload Signed Default Installer
         uses: actions/upload-release-asset@v1
         env:
-          GITHUB_TOKEN: '${{ secrets.RELEASE_TOKEN }}'
+          GITHUB_TOKEN: "${{ secrets.RELEASE_TOKEN }}"
         with:
-          upload_url: '${{ steps.create_release.outputs.upload_url }}'
+          upload_url: "${{ steps.create_release.outputs.upload_url }}"
           asset_path: artifacts/default/rustdesk-setup.exe
           asset_name: rustdesk-setup.exe
           asset_content_type: application/octet-stream
@@ -280,9 +316,9 @@ jobs:
       - name: Upload Signed Jeff Installer
         uses: actions/upload-release-asset@v1
         env:
-          GITHUB_TOKEN: '${{ secrets.RELEASE_TOKEN }}'
+          GITHUB_TOKEN: "${{ secrets.RELEASE_TOKEN }}"
         with:
-          upload_url: '${{ steps.create_release.outputs.upload_url }}'
+          upload_url: "${{ steps.create_release.outputs.upload_url }}"
           asset_path: artifacts/default/rustdesk-setup-jeff.exe
           asset_name: rustdesk-setup-jeff.exe
           asset_content_type: application/octet-stream
