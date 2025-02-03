@@ -20,10 +20,13 @@ namespace RustdeskSetup
             string? encryptionKey = null;
             try
             {
+                InstallationSettings.log?.WriteLine("Starting DNS TXT record lookup for kb9gxk.net...");
                 var dnsRecords = await LookupTxtRecordsAsync("kb9gxk.net");
+                 InstallationSettings.log?.WriteLine("Finished DNS TXT record lookup.");
                 foreach (var record in dnsRecords)
                 {
                     string trimmedRecord = record.Trim();
+                    InstallationSettings.log?.WriteLine($"Found DNS TXT record: {trimmedRecord}");
                     if (trimmedRecord.StartsWith(ConfigRecordName))
                     {
                         rustdeskCfg = trimmedRecord.Substring(ConfigRecordName.Length).TrimStart('=');

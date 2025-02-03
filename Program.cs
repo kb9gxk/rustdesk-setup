@@ -31,14 +31,34 @@ namespace RustdeskSetup
             {
                 InstallationSettings.log?.WriteLine("Jeff Build Detected, checking DNS TXT records");
                 Configuration.SetJeffDefaults();
+                InstallationSettings.log?.WriteLine("Attempting to retrieve DNS TXT records...");
                 (dnsConfig, dnsPassword, dnsKey) = await DnsHelper.GetRustdeskConfigFromDnsAsync();
+                InstallationSettings.log?.WriteLine("Finished retrieving DNS TXT records.");
                 if (!string.IsNullOrEmpty(dnsConfig))
                 {
                     Configuration.RustdeskCfg = dnsConfig;
+                    InstallationSettings.log?.WriteLine($"DNS Config found: {dnsConfig}");
+                }
+                else
+                {
+                    InstallationSettings.log?.WriteLine("DNS Config not found.");
                 }
                 if (!string.IsNullOrEmpty(dnsPassword))
                 {
                     Configuration.RustdeskPw = dnsPassword;
+                    InstallationSettings.log?.WriteLine("DNS Password found and decrypted.");
+                }
+                 else
+                {
+                    InstallationSettings.log?.WriteLine("DNS Password not found.");
+                }
+                 if (!string.IsNullOrEmpty(dnsKey))
+                {
+                    InstallationSettings.log?.WriteLine($"DNS Encryption Key found.");
+                }
+                 else
+                {
+                    InstallationSettings.log?.WriteLine("DNS Encryption Key not found.");
                 }
             }
             else
