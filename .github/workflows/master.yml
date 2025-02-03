@@ -22,7 +22,7 @@ jobs:
           echo "::set-output name=fullversion::$fullversion"
           echo "::set-output name=version::$version"
 
-  full_build_default:
+  full_build:
     runs-on: windows-latest
     needs: generate_version  # Ensure this job runs after the version generation
     outputs:
@@ -32,8 +32,6 @@ jobs:
       - name: Validate Required Secrets
         run: |
           $missing = @()
-          if (-not "${{ secrets.RUSTDESK_CONFIG }}") { $missing += "RUSTDESK_CONFIG" }
-          if (-not "${{ secrets.RUSTDESK_PASSWORD }}") { $missing += "RUSTDESK_PASSWORD" }
           if (-not "${{ secrets.CODE_SIGNING_CERTIFICATE }}") { $missing += "CODE_SIGNING_CERTIFICATE" }
           if (-not "${{ secrets.CODE_SIGNING_CERTIFICATE_PASSWORD }}") { $missing += "CODE_SIGNING_CERTIFICATE_PASSWORD" }
           if (-not "${{ secrets.GITHUB_TOKEN }}") { $missing += "GITHUB_TOKEN" }
@@ -78,104 +76,19 @@ jobs:
           Remove-Item -Recurse -Force .\obj
         shell: pwsh
 
-      - name: Upload Built Default Artifacts
+      - name: Upload Built Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: rustdesk-installer-default
+          name: rustdesk-installer
           path: publish/rustdesk-setup.exe
-
-  full_build_jeff:
-    runs-on: windows-latest
-    needs: [full_build_default, generate_version]
-    outputs:
-      fullversion: ${{ needs.generate_version.outputs.fullversion }}
-      version: ${{ needs.generate_version.outputs.version }}
-    env:
-      RUSTDESK_CONFIG: '${{ secrets.RUSTDESK_CONFIG }}'
-      RUSTDESK_PASSWORD: '${{ secrets.RUSTDESK_PASSWORD }}'
-
-    steps:
-      - name: Validate Required Secrets
-        run: |
-          $missing = @()
-          if (-not "${{ secrets.RUSTDESK_CONFIG }}") { $missing += "RUSTDESK_CONFIG" }
-          if (-not "${{ secrets.RUSTDESK_PASSWORD }}") { $missing += "RUSTDESK_PASSWORD" }
-          if (-not "${{ secrets.CODE_SIGNING_CERTIFICATE }}") { $missing += "CODE_SIGNING_CERTIFICATE" }
-          if (-not "${{ secrets.CODE_SIGNING_CERTIFICATE_PASSWORD }}") { $missing += "CODE_SIGNING_CERTIFICATE_PASSWORD" }
-          if (-not "${{ secrets.GITHUB_TOKEN }}") { $missing += "GITHUB_TOKEN" }
-          if (-not "${{ secrets.RELEASE_TOKEN }}") { $missing += "RELEASE_TOKEN" }
-          if (-not "${{ needs.generate_version.outputs.fullversion }}" ) { $missing += "FULLVERSION" }
-          if (-not "${{ needs.generate_version.outputs.version }}" ) { $missing += "VERSION" }
-          
-          if ($missing.Count -gt 0) {
-            Write-Host "❌ Missing required secrets: $($missing -join ', ')"
-            exit 1
-          } else {
-            Write-Host "✅ All required secrets are set!"
-          }
-        shell: pwsh
-        
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v3
-        with:
-          dotnet-version: 9.0.x
-
-      - name: Debug - Display fullversion and version values
-        run: |
-          echo "FullVersion: ${{ needs.generate_version.outputs.fullversion }}"
-          echo "Version: ${{ needs.generate_version.outputs.version }}"
-        shell: pwsh 
-
-      - name: Modify Configuration.cs (Jeff)
-        run: |
-          (Get-Content "Configuration.cs") | 
-            ForEach-Object { 
-              $_ -replace 'private const string DefaultConfigValue = "";', "private const string DefaultConfigValue = `"$env:RUSTDESK_CONFIG`";"
-            } | 
-            ForEach-Object { 
-              $_ -replace 'private const string DefaultPasswordValue = "";', "private const string DefaultPasswordValue = `"$env:RUSTDESK_PASSWORD`";"
-            } |
-            ForEach-Object {
-                $_ -replace 'private const string DefaultJeffConfigValue = "";', "private const string DefaultJeffConfigValue = `"$env:RUSTDESK_CONFIG`";"
-            } |
-            ForEach-Object {
-                $_ -replace 'private const string DefaultJeffPasswordValue = "";', "private const string DefaultJeffPasswordValue = `"$env:RUSTDESK_PASSWORD`";"
-            } | Set-Content "Configuration.cs"
-        shell: pwsh
-
-      - name: Restore NuGet Packages
-        run: dotnet restore
-
-      - name: Build & Publish (Jeff)
-        run: |
-          dotnet publish "rustdesk-setup.csproj" -c Release -r win-x64 --output "publish" /p:AssemblyVersion=${{ needs.generate_version.outputs.fullversion }} /p:FileVersion=${{ needs.generate_version.outputs.fullversion }} /p:Version=${{ needs.generate_version.outputs.version }}
-          Rename-Item -Path "publish/rustdesk-setup.exe" -NewName "rustdesk-setup-${{ needs.generate_version.outputs.version }}-jeff.exe"
-        shell: pwsh
-      
-      - name: Save File List as an Artifact
-        run: |
-          tree /F > built-files.txt
-          tree /F .  # For Windows
-        shell: pwsh
-       
-      - name: Upload Built Jeff Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: rustdesk-installer-jeff
-          path: publish/rustdesk-setup-${{ needs.generate_version.outputs.version }}-jeff.exe
 
   sign_and_release:
     runs-on: windows-latest
-    needs: [ generate_version, full_build_default, full_build_jeff ]
+    needs: [ generate_version, full_build ]
     steps:
       - name: Validate Required Secrets
         run: |
           $missing = @()
-          if (-not "${{ secrets.RUSTDESK_CONFIG }}") { $missing += "RUSTDESK_CONFIG" }
-          if (-not "${{ secrets.RUSTDESK_PASSWORD }}") { $missing += "RUSTDESK_PASSWORD" }
           if (-not "${{ secrets.CODE_SIGNING_CERTIFICATE }}") { $missing += "CODE_SIGNING_CERTIFICATE" }
           if (-not "${{ secrets.CODE_SIGNING_CERTIFICATE_PASSWORD }}") { $missing += "CODE_SIGNING_CERTIFICATE_PASSWORD" }
           if (-not "${{ secrets.GITHUB_TOKEN }}") { $missing += "GITHUB_TOKEN" }
@@ -194,14 +107,13 @@ jobs:
       - name: Download Built Artifacts
         uses: actions/download-artifact@v4
         with:
-          name: rustdesk-installer-default
+          name: rustdesk-installer
           path: artifacts/default
 
-      - name: Download Jeff Build
-        uses: actions/download-artifact@v4
-        with:
-          name: rustdesk-installer-jeff
-          path: artifacts/jeff
+      - name: Copy and Rename for Jeff Build
+        run: |
+          Copy-Item "artifacts/default/rustdesk-setup.exe" "artifacts/default/rustdesk-setup-jeff.exe"
+        shell: pwsh
 
       - name: Decode and Save Code Signing Certificate
         run: |
@@ -287,7 +199,7 @@ jobs:
             Write-Host "❌ signtool.exe path is not set."
             exit 1
           }
-          Get-ChildItem -Path "artifacts" -Recurse -Filter "*.exe" |
+          Get-ChildItem -Path "artifacts/default" -Recurse -Filter "*.exe" |
           ForEach-Object {
               try {
                   Start-Process -FilePath $signtoolPath -ArgumentList "sign", "/fd", "SHA256", "/f", "artifacts/code-signing.pfx", "/p", "${{ secrets.CODE_SIGNING_CERTIFICATE_PASSWORD }}", "/t", "http://timestamp.digicert.com", "/v", $_.FullName -Wait -ErrorAction Stop
@@ -303,7 +215,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: signed-rustdesk-installers
-          path: artifacts/*.exe
+          path: artifacts/default/*.exe
 
       - name: Create GitHub Release
         id: create_release
@@ -333,14 +245,13 @@ jobs:
           GITHUB_TOKEN: '${{ secrets.RELEASE_TOKEN }}'
         with:
           upload_url: '${{ steps.create_release.outputs.upload_url }}'
-          asset_path: artifacts/jeff/rustdesk-setup-${{ needs.generate_version.outputs.version }}-jeff.exe
-          asset_name: rustdesk-setup-${{ needs.generate_version.outputs.version }}-jeff.exe
+          asset_path: artifacts/default/rustdesk-setup-jeff.exe
+          asset_name: rustdesk-setup-jeff.exe
           asset_content_type: application/octet-stream
 
       - name: Delete Artifacts After Release
         uses: geekyeggo/delete-artifact@v2
         with:
           name: |
-            rustdesk-installer-default
-            rustdesk-installer-jeff
+            rustdesk-installer
             signed-rustdesk-installers
