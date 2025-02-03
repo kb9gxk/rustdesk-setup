@@ -52,43 +52,23 @@ namespace RustdeskSetup
             return (rustdeskCfg, rustdeskPw, encryptionKey);
         }
 
-
         private static async Task<List<string>> LookupTxtRecordsAsync(string domain)
         {
             List<string> txtRecords = new List<string>();
             try
             {
                 InstallationSettings.log?.WriteLine($"Starting DNS resolution for domain: {domain}");
-                var addresses = await Dns.GetHostAddressesAsync(domain);
-                InstallationSettings.log?.WriteLine($"DNS resolution completed. Addresses found: {addresses.Length}");
+                var hostEntry = await Dns.GetHostEntryAsync(domain);
+                InstallationSettings.log?.WriteLine($"DNS resolution completed. Addresses found: {hostEntry.AddressList.Length}");
 
-                foreach (var address in addresses)
+                if (hostEntry.Aliases.Length > 0)
                 {
-                    if (address.AddressFamily == AddressFamily.InterNetwork || address.AddressFamily == AddressFamily.InterNetworkV6)
-                    {
-                        InstallationSettings.log?.WriteLine($"Attempting to get TXT records using address: {address}");
-                        try
-                        {
-                            var hostEntry = await Dns.GetHostEntryAsync(domain, address.AddressFamily);
-                            if (hostEntry.Aliases.Length > 0)
-                            {
-                                txtRecords.AddRange(hostEntry.Aliases);
-                                InstallationSettings.log?.WriteLine($"TXT records found: {string.Join(", ", hostEntry.Aliases)}");
-                            }
-                            else
-                            {
-                                InstallationSettings.log?.WriteLine($"No TXT records found for address: {address}");
-                            }
-                        }
-                        catch (SocketException ex)
-                        {
-                            InstallationSettings.log?.WriteLine($"Socket Exception while resolving DNS TXT records for address {address}: {ex.Message}");
-                        }
-                         catch (Exception ex)
-                        {
-                            InstallationSettings.log?.WriteLine($"Exception while resolving DNS TXT records for address {address}: {ex.Message}");
-                        }
-                    }
+                    txtRecords.AddRange(hostEntry.Aliases);
+                    InstallationSettings.log?.WriteLine($"TXT records found: {string.Join(", ", hostEntry.Aliases)}");
+                }
+                else
+                {
+                    InstallationSettings.log?.WriteLine($"No TXT records found for domain: {domain}");
                 }
             }
             catch (SocketException ex)
