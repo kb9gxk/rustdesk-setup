@@ -30,28 +30,37 @@ namespace RustdeskSetup
                 foreach (var record in txtRecords)
                 {
                     string trimmedRecord = record.Trim().TrimStart('\uFEFF'); // Trim BOM and whitespace
-                    InstallationSettings.log?.WriteLine($"Found DNS TXT record: {trimmedRecord}");
 
-                    if (trimmedRecord.StartsWith(ConfigRecordName + "="))
+                    // Check if the record starts with "_rd" before processing or logging
+                    if (trimmedRecord.StartsWith("_rd"))
                     {
-                        rustdeskCfg = trimmedRecord.Substring(ConfigRecordName.Length + 1).Trim();
-                    }
-                    else if (trimmedRecord.StartsWith(PasswordRecordName + "="))
-                    {
-                        string encryptedPw = trimmedRecord.Substring(PasswordRecordName.Length + 1).Trim();
-                        if (encryptedPw.StartsWith("="))
+                        InstallationSettings.log?.WriteLine($"Found DNS TXT record: {trimmedRecord}");
+
+                        if (trimmedRecord.StartsWith(ConfigRecordName + "="))
                         {
-                            encryptedPw = encryptedPw.Substring(1);
+                            rustdeskCfg = trimmedRecord.Substring(ConfigRecordName.Length + 1).Trim();
                         }
-                        rustdeskPw = encryptedPw; // Store the encrypted password for later
+                        else if (trimmedRecord.StartsWith(PasswordRecordName + "="))
+                        {
+                            string encryptedPw = trimmedRecord.Substring(PasswordRecordName.Length + 1).Trim();
+                            if (encryptedPw.StartsWith("="))
+                            {
+                                encryptedPw = encryptedPw.Substring(1);
+                            }
+                            rustdeskPw = encryptedPw; // Store the encrypted password for later
+                        }
+                        else if (trimmedRecord.StartsWith(KeyRecordName + "="))
+                        {
+                            encryptionKey = trimmedRecord.Substring(KeyRecordName.Length + 1).Trim();
+                        }
+                        else if (trimmedRecord.StartsWith(IVRecordName + "="))
+                        {
+                            encryptionIV = trimmedRecord.Substring(IVRecordName.Length + 1).Trim();
+                        }
                     }
-                    else if (trimmedRecord.StartsWith(KeyRecordName + "="))
+                    else
                     {
-                        encryptionKey = trimmedRecord.Substring(KeyRecordName.Length + 1).Trim();
-                    }
-                    else if (trimmedRecord.StartsWith(IVRecordName + "="))
-                    {
-                        encryptionIV = trimmedRecord.Substring(IVRecordName.Length + 1).Trim();
+                         InstallationSettings.log?.WriteLine($"Ignoring DNS TXT record: {trimmedRecord}");
                     }
                 }
 
@@ -70,11 +79,11 @@ namespace RustdeskSetup
                     {
                         InstallationSettings.log?.WriteLine("Warning: IV not found in DNS. Cannot decrypt password.");
                     }
-                     if (string.IsNullOrEmpty(encryptionKey))
+                    if (string.IsNullOrEmpty(encryptionKey))
                     {
                         InstallationSettings.log?.WriteLine("Warning: Key not found in DNS. Cannot decrypt password.");
                     }
-                     if (string.IsNullOrEmpty(rustdeskPw))
+                    if (string.IsNullOrEmpty(rustdeskPw))
                     {
                         InstallationSettings.log?.WriteLine("Warning: Encrypted password not found in DNS.");
                     }
