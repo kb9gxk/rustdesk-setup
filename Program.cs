@@ -27,6 +27,11 @@ namespace RustdeskSetup
                 return;
             }
 
+            string? dnsConfig = null;
+            string? dnsPassword = null;
+            string? dnsKey = null;
+            string? dnsIv = null;
+
             if (parsedArgs.ShouldTest) // New test logic
             {
                 if (!parsedArgs.IsJeffBuild)
@@ -37,10 +42,7 @@ namespace RustdeskSetup
                 }
                 Console.WriteLine("Jeff Build Detected, testing DNS TXT records and decryption...");
                 Configuration.SetJeffDefaults();
-                string? dnsConfig = null;
-                string? dnsPassword = null;
-                string? dnsKey = null;
-                string? dnsIv = null;
+                
                 try
                 {
                      (dnsConfig, dnsPassword, dnsKey, dnsIv) = await DnsHelper.GetRustdeskConfigFromDnsAsync();
@@ -62,10 +64,6 @@ namespace RustdeskSetup
 
             Configuration.UseStableVersion = parsedArgs.UseStableVersion;
 
-            string? dnsConfig = null;
-            string? dnsPassword = null;
-            string? dnsKey = null;
-            string? dnsIv = null;
 
             if (parsedArgs.IsJeffBuild)
             {
