@@ -53,10 +53,20 @@ namespace RustdeskSetup
                 InstallationSettings.log?.WriteLine($"No {InstallationSettings.editionString} release found in GitHub response.");
                 return (null, null);
             }
-            catch (Exception ex)
+            catch (HttpRequestException ex)
             {
                 InstallationSettings.log?.WriteLine($"Error fetching {InstallationSettings.editionString} Rustdesk URL: {ex.Message}");
                 return (null, null);
+            }
+             catch (JsonException ex)
+            {
+                 InstallationSettings.log?.WriteLine($"Error parsing JSON response: {ex.Message}");
+                 return (null, null);
+            }
+            catch (Exception ex)
+            {
+                 InstallationSettings.log?.WriteLine($"Error fetching {InstallationSettings.editionString} Rustdesk URL: {ex.Message}");
+                 return (null, null);
             }
         }
     }
