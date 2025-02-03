@@ -10,10 +10,9 @@ namespace RustdeskSetup
         // Default key to use if DNS record is not found.
         // IMPORTANT: This should be a very strong key, and it is still better to use a key from DNS.
         private static byte[] _defaultKey = Encoding.UTF8.GetBytes("YourStrongDefaultKeyHere1234567890123456");
-        private static readonly byte[] _iv = Encoding.UTF8.GetBytes("Hsn2aC@jk4HC5awc"); // 16 bytes for AES
         private static byte[] _key;
 
-         internal static byte[] GenerateRandomKey()
+        internal static byte[] GenerateRandomKey()
         {
             using (var rng = new RNGCryptoServiceProvider())
             {
@@ -22,11 +21,19 @@ namespace RustdeskSetup
                 return key;
             }
         }
-        internal static byte[] GetIV()
+        internal static byte[] GenerateRandomIV()
         {
-            return _iv;
+             using (var rng = new RNGCryptoServiceProvider())
+            {
+                byte[] iv = new byte[16]; // 128 bits for AES
+                rng.GetBytes(iv);
+                return iv;
+            }
         }
-
+        internal static void SetEncryptionKey(byte[] key)
+        {
+            _key = key;
+        }
         internal static void SetEncryptionKey(string? dnsKey)
         {
             if (!string.IsNullOrEmpty(dnsKey))
@@ -53,7 +60,7 @@ namespace RustdeskSetup
             }
         }
 
-        internal static string Encrypt(string plainText)
+        internal static string Encrypt(string plainText, byte[] iv)
         {
             if (string.IsNullOrEmpty(plainText))
             {
@@ -63,7 +70,7 @@ namespace RustdeskSetup
             using (Aes aesAlg = Aes.Create())
             {
                 aesAlg.Key = _key;
-                aesAlg.IV = _iv;
+                aesAlg.IV = iv;
 
                 ICryptoTransform encryptor = aesAlg.CreateEncryptor(aesAlg.Key, aesAlg.IV);
 
@@ -79,7 +86,7 @@ namespace RustdeskSetup
             }
         }
 
-        internal static string Decrypt(string cipherText)
+        internal static string Decrypt(string cipherText, string ivString)
         {
             if (string.IsNullOrEmpty(cipherText))
             {
@@ -89,11 +96,12 @@ namespace RustdeskSetup
             try
             {
                 byte[] cipherBytes = Convert.FromBase64String(cipherText);
+                 byte[] iv = Encoding.UTF8.GetBytes(ivString);
 
                 using (Aes aesAlg = Aes.Create())
                 {
                     aesAlg.Key = _key;
-                    aesAlg.IV = _iv;
+                    aesAlg.IV = iv;
 
                     ICryptoTransform decryptor = aesAlg.CreateDecryptor(aesAlg.Key, aesAlg.IV);
 

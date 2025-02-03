@@ -6,31 +6,16 @@ namespace RustdeskSetup
 {
     internal static class DnsSettingsGenerator
     {
-        internal static void GenerateAndSaveDnsSettings(string password, string customKey)
+        internal static void GenerateAndSaveDnsSettings(string password)
         {
              InstallationSettings.log?.WriteLine("Generating DNS settings...");
 
-            byte[] key;
-            if (!string.IsNullOrEmpty(customKey))
-            {
-                if (Encoding.UTF8.GetBytes(customKey).Length != 32)
-                {
-                    InstallationSettings.log?.WriteLine("Custom key must be 32 characters. Using a randomly generated key.");
-                    key = EncryptionHelper.GenerateRandomKey();
-                }
-                else
-                {
-                    key = Encoding.UTF8.GetBytes(customKey);
-                }
-            }
-            else
-            {
-                key = EncryptionHelper.GenerateRandomKey();
-            }
+            byte[] key = EncryptionHelper.GenerateRandomKey();
+            byte[] iv = EncryptionHelper.GenerateRandomIV();
             string keyString = Encoding.UTF8.GetString(key);
-            string ivString = Encoding.UTF8.GetString(EncryptionHelper.GetIV());
-            EncryptionHelper.SetEncryptionKey(keyString);
-            string encryptedPassword = EncryptionHelper.Encrypt(password);
+            string ivString = Encoding.UTF8.GetString(iv);
+            EncryptionHelper.SetEncryptionKey(key);
+            string encryptedPassword = EncryptionHelper.Encrypt(password, iv);
 
 
             string dnsSettingsFilePath = Path.Combine(Environment.CurrentDirectory, "dnssettings.txt");

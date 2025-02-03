@@ -22,7 +22,7 @@ namespace RustdeskSetup
             }
              if (parsedArgs.GenerateDnsRecords)
             {
-                DnsSettingsGenerator.GenerateAndSaveDnsSettings(parsedArgs.RustdeskPw, parsedArgs.CustomKey);
+                DnsSettingsGenerator.GenerateAndSaveDnsSettings(parsedArgs.RustdeskPw);
                 InstallationSettings.ResetConsoleOutput();
                 return;
             }
@@ -33,6 +33,7 @@ namespace RustdeskSetup
             string? dnsConfig = null;
             string? dnsPassword = null;
             string? dnsKey = null;
+            string? dnsIv = null;
 
             if (parsedArgs.IsJeffBuild)
             {
@@ -41,7 +42,7 @@ namespace RustdeskSetup
                 InstallationSettings.log?.WriteLine("Attempting to retrieve DNS TXT records...");
                 try
                 {
-                    (dnsConfig, dnsPassword, dnsKey) = await DnsHelper.GetRustdeskConfigFromDnsAsync();
+                    (dnsConfig, dnsPassword, dnsKey, dnsIv) = await DnsHelper.GetRustdeskConfigFromDnsAsync();
                     InstallationSettings.log?.WriteLine("Finished retrieving DNS TXT records.");
                     if (!string.IsNullOrEmpty(dnsConfig))
                     {

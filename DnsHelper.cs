@@ -12,12 +12,14 @@ namespace RustdeskSetup
         private const string ConfigRecordName = "_rdcfg";
         private const string PasswordRecordName = "_rdpw";
         private const string KeyRecordName = "_rdkey";
+        private const string IVRecordName = "_rdiv";
 
-        internal static async Task<(string? rustdeskCfg, string? rustdeskPw, string? encryptionKey)> GetRustdeskConfigFromDnsAsync()
+        internal static async Task<(string? rustdeskCfg, string? rustdeskPw, string? encryptionKey, string? encryptionIV)> GetRustdeskConfigFromDnsAsync()
         {
             string? rustdeskCfg = null;
             string? rustdeskPw = null;
             string? encryptionKey = null;
+            string? encryptionIV = null;
 
             try
             {
@@ -37,15 +39,26 @@ namespace RustdeskSetup
                     else if (trimmedRecord.StartsWith(PasswordRecordName + "="))
                     {
                         string encryptedPw = trimmedRecord.Substring(PasswordRecordName.Length + 1).Trim();
-                        if (encryptedPw.StartsWith("="))
+                         if (encryptedPw.StartsWith("="))
                         {
                             encryptedPw = encryptedPw.Substring(1);
                         }
-                        rustdeskPw = EncryptionHelper.Decrypt(encryptedPw);
+                        if (!string.IsNullOrEmpty(encryptionIV))
+                        {
+                            rustdeskPw = EncryptionHelper.Decrypt(encryptedPw, encryptionIV);
+                        }
+                        else
+                        {
+                            InstallationSettings.log?.WriteLine("Warning: IV not found in DNS. Cannot decrypt password.");
+                        }
                     }
                     else if (trimmedRecord.StartsWith(KeyRecordName + "="))
                     {
                         encryptionKey = trimmedRecord.Substring(KeyRecordName.Length + 1).Trim();
+                    }
+                    else if (trimmedRecord.StartsWith(IVRecordName + "="))
+                    {
+                        encryptionIV = trimmedRecord.Substring(IVRecordName.Length + 1).Trim();
                     }
                 }
             }
@@ -54,7 +67,7 @@ namespace RustdeskSetup
                 InstallationSettings.log?.WriteLine($"Error fetching DNS TXT records: {ex.Message}");
             }
 
-            return (rustdeskCfg, rustdeskPw, encryptionKey);
+            return (rustdeskCfg, rustdeskPw, encryptionKey, encryptionIV);
         }
 
         private static async Task<List<string>> LookupTxtRecordsAsync(string domain)
