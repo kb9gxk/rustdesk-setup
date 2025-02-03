@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
+using DnsClient;
+using DnsClient.Protocol;
 
 namespace RustdeskSetup
 {
@@ -57,18 +59,21 @@ namespace RustdeskSetup
             List<string> txtRecords = new List<string>();
             try
             {
-                InstallationSettings.log?.WriteLine($"Starting DNS resolution for domain: {domain}");
-                var hostEntry = await Dns.GetHostEntryAsync(domain);
-                InstallationSettings.log?.WriteLine($"DNS resolution completed. Addresses found: {hostEntry.AddressList.Length}");
+                using var client = new LookupClient();
+                var result = await client.QueryAsync(domain, QueryType.TXT);
 
-                if (hostEntry.Aliases.Length > 0)
+                if (result.HasError)
                 {
-                    txtRecords.AddRange(hostEntry.Aliases);
-                    InstallationSettings.log?.WriteLine($"TXT records found: {string.Join(", ", hostEntry.Aliases)}");
+                    InstallationSettings.log?.WriteLine($"DNS query error: {result.ErrorMessage}");
+                    return txtRecords;
                 }
-                else
+
+                foreach (var record in result.Answers.TxtRecords())
                 {
-                    InstallationSettings.log?.WriteLine($"No TXT records found for domain: {domain}");
+                     foreach (var txt in record.Text)
+                    {
+                        txtRecords.Add(txt);
+                    }
                 }
             }
             catch (SocketException ex)
