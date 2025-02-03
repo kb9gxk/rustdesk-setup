@@ -46,10 +46,10 @@ namespace RustdeskSetup
                 try
                 {
                      (dnsConfig, dnsPassword, dnsKey, dnsIv) = await DnsHelper.GetRustdeskConfigFromDnsAsync();
-                    Console.WriteLine($"DNS Config: {dnsConfig ?? "Not Found"}");
-                    Console.WriteLine($"DNS Password: {dnsPassword ?? "Not Found"}");
-                    Console.WriteLine($"DNS Key: {dnsKey ?? "Not Found"}");
-                    Console.WriteLine($"DNS IV: {dnsIv ?? "Not Found"}");
+                    Console.WriteLine($"DNS Config: {(dnsConfig != null ? "Found" : "Not Found")}");
+                    Console.WriteLine($"DNS Password: {(dnsPassword != null ? "Found" : "Not Found")}");
+                     Console.WriteLine($"DNS Key: {(dnsKey != null ? "Found" : "Not Found")}");
+                    Console.WriteLine($"DNS IV: {(dnsIv != null ? "Found" : "Not Found")}");
                 }
                 catch (Exception ex)
                 {
@@ -77,7 +77,7 @@ namespace RustdeskSetup
                     if (!string.IsNullOrEmpty(dnsConfig))
                     {
                         Configuration.RustdeskCfg = dnsConfig;
-                        InstallationSettings.log?.WriteLine($"DNS Config found: {dnsConfig}");
+                        InstallationSettings.log?.WriteLine($"DNS Config found."); // Modified log
                     }
                     else
                     {
