@@ -9,40 +9,20 @@ namespace RustdeskSetup
     {
         // Default key to use if DNS record is not found.
         // IMPORTANT: This should be a very strong key, and it is still better to use a key from DNS.
-        private static byte[] _defaultKey = GenerateSecureDefaultKey();
+        private static byte[] _defaultKey = Encoding.UTF8.GetBytes("YourStrongDefaultKeyHere1234567890123456");
         private static byte[] _key;
-
-        private static byte[] GenerateSecureDefaultKey()
-        {
-            using (var rng = new RNGCryptoServiceProvider())
-            {
-                byte[] salt = new byte[16];
-                rng.GetBytes(salt);
-                // Use a Key Derivation Function (KDF) like PBKDF2
-                using (var pbkdf2 = new Rfc2898DeriveBytes("YourStaticPassword", salt, 10000, HashAlgorithmName.SHA256))
-                {
-                    return pbkdf2.GetBytes(32); // 256 bits for AES
-                }
-            }
-        }
 
         internal static byte[] GenerateRandomKey()
         {
-            using (var rng = new RNGCryptoServiceProvider())
-            {
-                byte[] key = new byte[32]; // 256 bits for AES
-                rng.GetBytes(key);
-                return key;
-            }
+            byte[] key = new byte[32]; // 256 bits for AES
+            RandomNumberGenerator.Fill(key);
+            return key;
         }
         internal static byte[] GenerateRandomIV()
         {
-            using (var rng = new RNGCryptoServiceProvider())
-            {
-                byte[] iv = new byte[16]; // 128 bits for AES
-                rng.GetBytes(iv);
-                return iv;
-            }
+            byte[] iv = new byte[16]; // 128 bits for AES
+            RandomNumberGenerator.Fill(iv);
+            return iv;
         }
         internal static void SetEncryptionKey(byte[] key)
         {
@@ -100,7 +80,7 @@ namespace RustdeskSetup
             }
         }
 
-        internal static string Decrypt(string cipherText, string ivString)
+         internal static string Decrypt(string cipherText, string ivString)
         {
             if (string.IsNullOrEmpty(cipherText))
             {
