@@ -40,7 +40,7 @@ namespace RustdeskSetup
             {
                 try
                 {
-                    _key = Convert.FromBase64String(dnsKey);
+                    _key = Convert.FromBase64String(dnsKey); // Convert from base64
                     if (_key.Length != 32)
                     {
                         InstallationSettings.log?.WriteLine($"Warning: DNS Key is not 32 bytes. Using default key.");
@@ -96,7 +96,7 @@ namespace RustdeskSetup
             try
             {
                 byte[] cipherBytes = Convert.FromBase64String(cipherText);
-                byte[] iv = Convert.FromBase64String(ivString);
+                byte[] iv = Convert.FromBase64String(ivString); // Convert from base64
                 if (iv.Length != 16)
                 {
                     InstallationSettings.log?.WriteLine($"Error: Invalid IV length. Expected 16 bytes, got {iv.Length} bytes.");

@@ -12,8 +12,8 @@ namespace RustdeskSetup
 
             byte[] key = EncryptionHelper.GenerateRandomKey();
             byte[] iv = EncryptionHelper.GenerateRandomIV();
-            string keyString = Encoding.UTF8.GetString(key);
-            string ivString = Encoding.UTF8.GetString(iv);
+            string keyString = Convert.ToBase64String(key); // Base64 encode the key
+            string ivString = Convert.ToBase64String(iv);  // Base64 encode the IV
             EncryptionHelper.SetEncryptionKey(key);
             string encryptedPassword = EncryptionHelper.Encrypt(password, iv);
 
