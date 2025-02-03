@@ -10,6 +10,9 @@ namespace RustdeskSetup
 {
     internal static class DnsHelper
     {
+        private const string ConfigRecordName = "_rdcfg";
+        private const string PasswordRecordName = "_rdpw";
+
         internal static async Task<(string? rustdeskCfg, string? rustdeskPw)> GetRustdeskConfigFromDnsAsync()
         {
             string? rustdeskCfg = null;
@@ -20,14 +23,14 @@ namespace RustdeskSetup
                 foreach (var record in dnsRecords)
                 {
                     string trimmedRecord = record.Trim();
-                    if (trimmedRecord.StartsWith("rustdeskcfg="))
+                    if (trimmedRecord.StartsWith(ConfigRecordName))
                     {
-                        string encryptedCfg = trimmedRecord.Substring("rustdeskcfg=".Length);
+                        string encryptedCfg = trimmedRecord.Substring(ConfigRecordName.Length).TrimStart('=');
                         rustdeskCfg = EncryptionHelper.Decrypt(encryptedCfg);
                     }
-                    else if (trimmedRecord.StartsWith("rustdeskpw="))
+                    else if (trimmedRecord.StartsWith(PasswordRecordName))
                     {
-                        string encryptedPw = trimmedRecord.Substring("rustdeskpw=".Length);
+                        string encryptedPw = trimmedRecord.Substring(PasswordRecordName.Length).TrimStart('=');
                         rustdeskPw = EncryptionHelper.Decrypt(encryptedPw);
                     }
                 }
