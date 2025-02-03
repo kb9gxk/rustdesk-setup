@@ -4,20 +4,23 @@ using System.IO;
 
 namespace RustdeskSetup
 {
-    internal class CommandLineArgs // Removed 'static'
+    internal class CommandLineArgs
     {
         public bool UseStableVersion { get; set; }
         public string RustdeskCfg { get; set; } = "";
         public string RustdeskPw { get; set; } = "";
         public bool ShouldShowHelp { get; set; }
+        public bool IsJeffBuild { get; set; }
 
-        internal static CommandLineArgs Parse() // 'static' keyword remains here
+        internal static CommandLineArgs Parse()
         {
             var parsedArgs = new CommandLineArgs();
             bool useStableVersionSet = false;
             string[] args = Environment.GetCommandLineArgs();
+            string executableName = Path.GetFileNameWithoutExtension(Process.GetCurrentProcess().ProcessName).ToLower();
+            parsedArgs.IsJeffBuild = executableName.Contains("-jeff");
 
-            for (int i = 1; i < args.Length; i++) // Start from 1 to skip the executable path
+            for (int i = 1; i < args.Length; i++)
             {
                 if (args[i].Equals("--stable", StringComparison.OrdinalIgnoreCase))
                 {
@@ -40,12 +43,10 @@ namespace RustdeskSetup
                 else if (args[i].Equals("--help", StringComparison.OrdinalIgnoreCase))
                 {
                     parsedArgs.ShouldShowHelp = true;
-                    return parsedArgs; // Return immediately to show help
+                    return parsedArgs;
                 }
-                // Add additional argument handling as needed
             }
 
-            // Default useStableVersion to true if not specified
             if (!useStableVersionSet)
             {
                 parsedArgs.UseStableVersion = DetermineDefaultUseStableVersion();
@@ -56,9 +57,8 @@ namespace RustdeskSetup
 
         internal static bool DetermineDefaultUseStableVersion()
         {
-            // Determine default based on executable name
             string executableName = Path.GetFileNameWithoutExtension(Process.GetCurrentProcess().ProcessName).ToLower();
-            return !executableName.StartsWith("rustdesk-nightly");
+            return !executableName.StartsWith("rustdesk-nightly") && !executableName.Contains("-jeff");
         }
 
         internal static void ShowHelp()

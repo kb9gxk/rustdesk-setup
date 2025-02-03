@@ -137,6 +137,12 @@ jobs:
             } | 
             ForEach-Object { 
               $_ -replace 'private const string DefaultPasswordValue = "";', "private const string DefaultPasswordValue = `"$env:RUSTDESK_PASSWORD`";"
+            } |
+            ForEach-Object {
+                $_ -replace 'private const string DefaultJeffConfigValue = "";', "private const string DefaultJeffConfigValue = `"$env:RUSTDESK_CONFIG`";"
+            } |
+            ForEach-Object {
+                $_ -replace 'private const string DefaultJeffPasswordValue = "";', "private const string DefaultJeffPasswordValue = `"$env:RUSTDESK_PASSWORD`";"
             } | Set-Content "Configuration.cs"
         shell: pwsh
 
@@ -146,7 +152,7 @@ jobs:
       - name: Build & Publish (Jeff)
         run: |
           dotnet publish "rustdesk-setup.csproj" -c Release -r win-x64 --output "publish" /p:AssemblyVersion=${{ needs.generate_version.outputs.fullversion }} /p:FileVersion=${{ needs.generate_version.outputs.fullversion }} /p:Version=${{ needs.generate_version.outputs.version }}
-          Rename-Item -Path "publish/rustdesk-setup.exe" -NewName "rustdesk-setup-jeff.exe"
+          Rename-Item -Path "publish/rustdesk-setup.exe" -NewName "rustdesk-setup-${{ needs.generate_version.outputs.version }}-jeff.exe"
         shell: pwsh
       
       - name: Save File List as an Artifact
@@ -159,7 +165,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: rustdesk-installer-jeff
-          path: publish/rustdesk-setup-jeff.exe
+          path: publish/rustdesk-setup-${{ needs.generate_version.outputs.version }}-jeff.exe
 
   sign_and_release:
     runs-on: windows-latest
@@ -327,8 +333,8 @@ jobs:
           GITHUB_TOKEN: '${{ secrets.RELEASE_TOKEN }}'
         with:
           upload_url: '${{ steps.create_release.outputs.upload_url }}'
-          asset_path: artifacts/jeff/rustdesk-setup-jeff.exe
-          asset_name: rustdesk-setup-jeff.exe
+          asset_path: artifacts/jeff/rustdesk-setup-${{ needs.generate_version.outputs.version }}-jeff.exe
+          asset_name: rustdesk-setup-${{ needs.generate_version.outputs.version }}-jeff.exe
           asset_content_type: application/octet-stream
 
       - name: Delete Artifacts After Release
