@@ -12,14 +12,14 @@ namespace RustdeskSetup
 
             try
             {
-                using (var process = new Process())
+                 using (var process = new Process())
                 {
                     process.StartInfo.FileName = runMe;
 
                     // Strip any leading '=' from rustdeskCfg
                     if (!string.IsNullOrEmpty(rustdeskCfg) && rustdeskCfg.StartsWith("="))
                     {
-                        rustdeskCfg = rustdeskCfg.Substring(1); // Remove the leading '='
+                        rustdeskCfg = rustdeskCfg.Substring(1); // Remove the leading '=' as it's not required
                     }
 
                     var arguments = $"--config {rustdeskCfg}";
@@ -31,7 +31,14 @@ namespace RustdeskSetup
                     process.StartInfo.Arguments = arguments;
                     process.StartInfo.UseShellExecute = false;
                     process.Start();
-                    // Removed the wait for exit
+                    if (process.HasExited)
+                    {
+                        InstallationSettings.log?.WriteLine($"Error starting Rustdesk: Process exited immediately.");
+                    }
+                    else
+                    {
+                        InstallationSettings.log?.WriteLine("Rustdesk started successfully.");
+                    }
                 }
             }
             catch (Exception ex)
