@@ -26,8 +26,7 @@ namespace RustdeskSetup
                     string trimmedRecord = record.Trim();
                     if (trimmedRecord.StartsWith(ConfigRecordName))
                     {
-                        string encryptedCfg = trimmedRecord.Substring(ConfigRecordName.Length).TrimStart('=');
-                        rustdeskCfg = EncryptionHelper.Decrypt(encryptedCfg);
+                        rustdeskCfg = trimmedRecord.Substring(ConfigRecordName.Length).TrimStart('=');
                     }
                     else if (trimmedRecord.StartsWith(PasswordRecordName))
                     {
@@ -37,7 +36,6 @@ namespace RustdeskSetup
                     else if (trimmedRecord.StartsWith(KeyRecordName))
                     {
                         encryptionKey = trimmedRecord.Substring(KeyRecordName.Length).TrimStart('=');
-                        // No need to decrypt the key itself, it should be the raw key
                     }
                 }
             }
