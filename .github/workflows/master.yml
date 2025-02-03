@@ -245,9 +245,8 @@ jobs:
           $currentRef = "${{ github.sha }}"
           Write-Host "Previous Ref: $previousRef"
           Write-Host "Current Ref: $currentRef"
-          $changes = git diff --name-only $previousRef $currentRef
-          if ($changes) {
-              $commitMessages = git log --pretty=format:"- %s" $previousRef..$currentRef
+          $commitMessages = git log --pretty=format:"- %s" $previousRef..$currentRef
+          if ($commitMessages) {
               $formattedBody = "Key Changes:\n$commitMessages"
           } else {
               $formattedBody = "No significant changes since previous release."
