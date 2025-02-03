@@ -4,6 +4,7 @@ namespace RustdeskSetup
     {
         private const string DefaultConfigValue = "";
         private const string DefaultPasswordValue = "";
+        //This can be set via environment variables or a config file
         private const string DefaultJeffConfigValue = "";
         private const string DefaultJeffPasswordValue = "";
 
@@ -15,6 +16,7 @@ namespace RustdeskSetup
         {
             RustdeskCfg = DefaultJeffConfigValue;
             RustdeskPw = DefaultJeffPasswordValue;
+            InstallationSettings.log?.WriteLine("Jeff Defaults Set.");
         }
     }
 }
