@@ -23,11 +23,15 @@ namespace RustdeskSetup
 
             Configuration.UseStableVersion = parsedArgs.UseStableVersion;
 
+            string? dnsConfig = null;
+            string? dnsPassword = null;
+            string? dnsKey = null;
+
             if (parsedArgs.IsJeffBuild)
             {
                 InstallationSettings.log?.WriteLine("Jeff Build Detected, checking DNS TXT records");
                 Configuration.SetJeffDefaults();
-                (string? dnsConfig, string? dnsPassword) = await DnsHelper.GetRustdeskConfigFromDnsAsync();
+                (dnsConfig, dnsPassword, dnsKey) = await DnsHelper.GetRustdeskConfigFromDnsAsync();
                 if (!string.IsNullOrEmpty(dnsConfig))
                 {
                     Configuration.RustdeskCfg = dnsConfig;
@@ -42,6 +46,8 @@ namespace RustdeskSetup
                 Configuration.RustdeskCfg = parsedArgs.RustdeskCfg;
                 Configuration.RustdeskPw = parsedArgs.RustdeskPw;
             }
+
+            EncryptionHelper.SetEncryptionKey(dnsKey); // Set the encryption key from DNS or default
 
             string apiUrl = Configuration.UseStableVersion.Value ? InstallationSettings.githubStableApiUrl : InstallationSettings.githubNightlyApiUrl;
 

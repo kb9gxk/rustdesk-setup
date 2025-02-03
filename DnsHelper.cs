@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace RustdeskSetup
@@ -12,11 +11,13 @@ namespace RustdeskSetup
     {
         private const string ConfigRecordName = "_rdcfg";
         private const string PasswordRecordName = "_rdpw";
+        private const string KeyRecordName = "_rdkey"; // New record name for the encryption key
 
-        internal static async Task<(string? rustdeskCfg, string? rustdeskPw)> GetRustdeskConfigFromDnsAsync()
+        internal static async Task<(string? rustdeskCfg, string? rustdeskPw, string? encryptionKey)> GetRustdeskConfigFromDnsAsync()
         {
             string? rustdeskCfg = null;
             string? rustdeskPw = null;
+            string? encryptionKey = null;
             try
             {
                 var dnsRecords = await LookupTxtRecordsAsync("kb9gxk.net");
@@ -33,15 +34,21 @@ namespace RustdeskSetup
                         string encryptedPw = trimmedRecord.Substring(PasswordRecordName.Length).TrimStart('=');
                         rustdeskPw = EncryptionHelper.Decrypt(encryptedPw);
                     }
+                    else if (trimmedRecord.StartsWith(KeyRecordName))
+                    {
+                        encryptionKey = trimmedRecord.Substring(KeyRecordName.Length).TrimStart('=');
+                        // No need to decrypt the key itself, it should be the raw key
+                    }
                 }
             }
             catch (Exception ex)
             {
                 InstallationSettings.log?.WriteLine($"Error fetching DNS TXT records: {ex.Message}");
             }
-            return (rustdeskCfg, rustdeskPw);
+            return (rustdeskCfg, rustdeskPw, encryptionKey);
         }
 
+        // Rest of the DnsHelper.cs code remains the same
         private static async Task<List<string>> LookupTxtRecordsAsync(string domain)
         {
             List<string> txtRecords = new List<string>();

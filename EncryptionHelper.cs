@@ -7,10 +7,37 @@ namespace RustdeskSetup
 {
     internal static class EncryptionHelper
     {
-        // IMPORTANT: This key should be generated securely and kept secret.
-        // DO NOT hardcode a key like this in a real application.
-        private static readonly byte[] _key = Encoding.UTF8.GetBytes("GLJUqYaXKn!v4^5vdrPr3yaKD#d!*2gn"); // 32 bytes for AES-256
+        // Default key to use if DNS record is not found.
+        // IMPORTANT: This should be a very strong key, and it is still better to use a key from DNS.
+        private static readonly byte[] _defaultKey = Encoding.UTF8.GetBytes("DefaultKey123456789012345678901234567");
         private static readonly byte[] _iv = Encoding.UTF8.GetBytes("Hsn2aC@jk4HC5awc"); // 16 bytes for AES
+        private static byte[] _key;
+
+        internal static void SetEncryptionKey(string? dnsKey)
+        {
+            if (!string.IsNullOrEmpty(dnsKey))
+            {
+                try
+                {
+                    _key = Encoding.UTF8.GetBytes(dnsKey);
+                    if (_key.Length != 32)
+                    {
+                        InstallationSettings.log?.WriteLine($"Warning: DNS Key is not 32 bytes. Using default key.");
+                        _key = _defaultKey;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    InstallationSettings.log?.WriteLine($"Error setting DNS Key: {ex.Message}. Using default key.");
+                    _key = _defaultKey;
+                }
+            }
+            else
+            {
+                InstallationSettings.log?.WriteLine($"Warning: DNS Key not found. Using default key.");
+                _key = _defaultKey;
+            }
+        }
 
         internal static string Encrypt(string plainText)
         {
