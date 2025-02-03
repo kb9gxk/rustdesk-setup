@@ -105,6 +105,11 @@ jobs:
             Write-Host "✅ All required secrets are set!"
           }
         shell: pwsh
+
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # Required to fetch all tags and history
         
       - name: Download Built Artifacts
         uses: actions/download-artifact@v4
