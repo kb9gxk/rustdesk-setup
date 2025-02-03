@@ -9,9 +9,19 @@ namespace RustdeskSetup
     {
         // Default key to use if DNS record is not found.
         // IMPORTANT: This should be a very strong key, and it is still better to use a key from DNS.
-        private static readonly byte[] _defaultKey = Encoding.UTF8.GetBytes("DefaultKey123456789012345678901234567");
+        private static readonly byte[] _defaultKey = GenerateRandomKey();
         private static readonly byte[] _iv = Encoding.UTF8.GetBytes("Hsn2aC@jk4HC5awc"); // 16 bytes for AES
         private static byte[] _key;
+
+         private static byte[] GenerateRandomKey()
+        {
+            using (var rng = new RNGCryptoServiceProvider())
+            {
+                byte[] key = new byte[32]; // 256 bits for AES
+                rng.GetBytes(key);
+                return key;
+            }
+        }
 
         internal static void SetEncryptionKey(string? dnsKey)
         {
