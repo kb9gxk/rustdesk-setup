@@ -11,6 +11,8 @@ namespace RustdeskSetup
         public string RustdeskPw { get; set; } = "";
         public bool ShouldShowHelp { get; set; }
         public bool IsJeffBuild { get; set; }
+        public bool GenerateDnsRecords { get; set; }
+        public string CustomKey { get; set; } = "";
 
         internal static CommandLineArgs Parse()
         {
@@ -31,6 +33,24 @@ namespace RustdeskSetup
                 {
                     parsedArgs.UseStableVersion = false;
                     useStableVersionSet = true;
+                }
+                 else if (args[i].Equals("--generate-dns", StringComparison.OrdinalIgnoreCase))
+                {
+                    parsedArgs.GenerateDnsRecords = true;
+                }
+                else if (args[i].StartsWith("--key=", StringComparison.OrdinalIgnoreCase))
+                {
+                    string keyValue = args[i].Substring("--key=".Length);
+                    if (!string.IsNullOrWhiteSpace(keyValue))
+                    {
+                        parsedArgs.CustomKey = keyValue;
+                    }
+                    else
+                    {
+                         Console.WriteLine("Error: --key argument requires a value.");
+                        parsedArgs.ShouldShowHelp = true;
+                        return parsedArgs;
+                    }
                 }
                 else if (args[i].StartsWith("--config=", StringComparison.OrdinalIgnoreCase))
                 {
@@ -86,7 +106,7 @@ namespace RustdeskSetup
             string executableName = Path.GetFileNameWithoutExtension(Process.GetCurrentProcess().ProcessName).ToLower();
             bool isNightlyBuild = executableName.StartsWith("rustdesk-nightly");
 
-            Console.WriteLine($"Usage: {executableName} [--stable|--nightly] [--config=<value>] [--password=<value>] [--help]");
+            Console.WriteLine($"Usage: {executableName} [--stable|--nightly] [--config=<value>] [--password=<value>] [--help] [--generate-dns] [--key=<value>]");
             Console.WriteLine();
 
             if (isNightlyBuild)
@@ -102,6 +122,8 @@ namespace RustdeskSetup
 
             Console.WriteLine("--config=<value>   Set network configuration output from the Network Settings");
             Console.WriteLine("--password=<value> Set the permanent password for Rustdesk");
+            Console.WriteLine("--generate-dns     Generate DNS TXT records for _rdpw, _rdkey, and _rdiv");
+            Console.WriteLine("--key=<value>      Set a custom encryption key.  Must be 32 characters");
             Console.WriteLine("--help             Show this help message");
         }
     }

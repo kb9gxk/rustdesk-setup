@@ -20,6 +20,13 @@ namespace RustdeskSetup
                 InstallationSettings.ResetConsoleOutput();
                 return;
             }
+             if (parsedArgs.GenerateDnsRecords)
+            {
+                DnsSettingsGenerator.GenerateAndSaveDnsSettings(parsedArgs.RustdeskPw, parsedArgs.CustomKey);
+                InstallationSettings.ResetConsoleOutput();
+                return;
+            }
+
 
             Configuration.UseStableVersion = parsedArgs.UseStableVersion;
 

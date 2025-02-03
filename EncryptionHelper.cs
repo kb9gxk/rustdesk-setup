@@ -13,7 +13,7 @@ namespace RustdeskSetup
         private static readonly byte[] _iv = Encoding.UTF8.GetBytes("Hsn2aC@jk4HC5awc"); // 16 bytes for AES
         private static byte[] _key;
 
-         private static byte[] GenerateRandomKey()
+         internal static byte[] GenerateRandomKey()
         {
             using (var rng = new RNGCryptoServiceProvider())
             {
@@ -21,6 +21,10 @@ namespace RustdeskSetup
                 rng.GetBytes(key);
                 return key;
             }
+        }
+        internal static byte[] GetIV()
+        {
+            return _iv;
         }
 
         internal static void SetEncryptionKey(string? dnsKey)
