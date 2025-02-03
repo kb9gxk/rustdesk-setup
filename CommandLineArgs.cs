@@ -70,6 +70,12 @@ namespace RustdeskSetup
                     parsedArgs.ShouldShowHelp = true;
                     return parsedArgs;
                 }
+                else
+                {
+                    Console.WriteLine($"Error: Invalid argument: {args[i]}");
+                    parsedArgs.ShouldShowHelp = true;
+                    return parsedArgs;
+                }
             }
 
             if (!useStableVersionSet)

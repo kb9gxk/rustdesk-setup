@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -72,86 +73,44 @@ namespace RustdeskSetup
 
         private static async Task<List<string>> LookupTxtRecordsAsync(string domain)
         {
-            return await Task.Run(() =>
-            {
-                List<string> txtRecords = new();
-                try
-                {
-                    string command = "nslookup";
-                    string arguments = $"-query=TXT {domain}";
-
-
-                    InstallationSettings.log?.WriteLine($"🔍 Executing DNS lookup: {command} {arguments}");
-                    string output = RunCommand(command, arguments);
-
-                    if (!string.IsNullOrWhiteSpace(output))
-                    {
-                        txtRecords.AddRange(ParseTxtRecords(output));
-                    }
-                    else
-                    {
-                        InstallationSettings.log?.WriteLine($"❌ No TXT records found for {domain}");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    InstallationSettings.log?.WriteLine($"❌ DNS TXT lookup failed: {ex.Message}");
-                }
-
-                return txtRecords;
-            });
-        }
-
-        private static string RunCommand(string command, string arguments)
-        {
             try
             {
-                ProcessStartInfo startInfo = new()
+                IPHostEntry hostEntry = await Dns.GetHostEntryAsync(domain);
+                List<string> txtRecords = new();
+                foreach (IPAddress address in hostEntry.AddressList)
                 {
-                    FileName = command,
-                    Arguments = arguments,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                };
-
-                using Process process = new() { StartInfo = startInfo };
-                process.Start();
-
-                string output = process.StandardOutput.ReadToEnd();
-                string error = process.StandardError.ReadToEnd();
-
-                process.WaitForExit();
-
-                if (!string.IsNullOrWhiteSpace(error))
-                {
-                    InstallationSettings.log?.WriteLine($"⚠️ DNS lookup error: {error}");
+                    if (address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+                    {
+                         InstallationSettings.log?.WriteLine($"🔍 Performing DNS TXT lookup for {domain} at IP {address}...");
+                         IPHostEntry dnsEntry = await Dns.GetHostEntryAsync(domain);
+                         foreach (var dnsAddress in dnsEntry.AddressList)
+                         {
+                             if (dnsAddress.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+                             {
+                                 try
+                                 {
+                                     var txtRecord = await Dns.GetHostEntryAsync(domain);
+                                     txtRecords.AddRange(txtRecord.Aliases);
+                                 }
+                                 catch (Exception ex)
+                                 {
+                                     InstallationSettings.log?.WriteLine($"❌ DNS TXT lookup failed for {domain} at {dnsAddress}: {ex.Message}");
+                                 }
+                             }
+                         }
+                    }
                 }
-
-                return output;
+                if (txtRecords.Count == 0)
+                {
+                    InstallationSettings.log?.WriteLine($"❌ No TXT records found for {domain}");
+                }
+                return txtRecords;
             }
             catch (Exception ex)
             {
-                InstallationSettings.log?.WriteLine($"❌ Failed to run command: {ex.Message}");
-                return string.Empty;
+                InstallationSettings.log?.WriteLine($"❌ DNS TXT lookup failed: {ex.Message}");
+                return new List<string>();
             }
-        }
-
-        private static List<string> ParseTxtRecords(string rawOutput)
-        {
-            List<string> txtRecords = new();
-
-            foreach (string line in rawOutput.Split('\n'))
-            {
-                string trimmed = line.Trim();
-                if (trimmed.StartsWith("\"") && trimmed.EndsWith("\""))
-                {
-                    txtRecords.Add(trimmed.Trim('"'));
-                }
-            }
-
-            return txtRecords;
         }
     }
 }

@@ -40,7 +40,7 @@ namespace RustdeskSetup
             {
                 try
                 {
-                    _key = Encoding.UTF8.GetBytes(dnsKey);
+                    _key = Convert.FromBase64String(dnsKey);
                     if (_key.Length != 32)
                     {
                         InstallationSettings.log?.WriteLine($"Warning: DNS Key is not 32 bytes. Using default key.");
@@ -86,7 +86,7 @@ namespace RustdeskSetup
             }
         }
 
-        internal static string Decrypt(string cipherText, string ivString)
+         internal static string Decrypt(string cipherText, string ivString)
         {
             if (string.IsNullOrEmpty(cipherText))
             {
@@ -96,13 +96,17 @@ namespace RustdeskSetup
             try
             {
                 byte[] cipherBytes = Convert.FromBase64String(cipherText);
-                 byte[] iv = Encoding.UTF8.GetBytes(ivString);
+                byte[] iv = Convert.FromBase64String(ivString);
+                if (iv.Length != 16)
+                {
+                    InstallationSettings.log?.WriteLine($"Error: Invalid IV length. Expected 16 bytes, got {iv.Length} bytes.");
+                    return null;
+                }
 
                 using (Aes aesAlg = Aes.Create())
                 {
                     aesAlg.Key = _key;
                     aesAlg.IV = iv;
-
                     ICryptoTransform decryptor = aesAlg.CreateDecryptor(aesAlg.Key, aesAlg.IV);
 
                     using (MemoryStream msDecrypt = new MemoryStream(cipherBytes))
@@ -118,7 +122,7 @@ namespace RustdeskSetup
             catch (Exception ex)
             {
                 InstallationSettings.log?.WriteLine($"Error during password decryption: {ex.Message}");
-                return string.Empty; // Or handle the error as needed
+                return null;
             }
         }
     }
