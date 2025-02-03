@@ -19,11 +19,12 @@ namespace RustdeskSetup
             string? rustdeskPw = null;
             string? encryptionKey = null;
             string? encryptionIV = null;
+            List<string> txtRecords = new List<string>();
 
             try
             {
                 InstallationSettings.log?.WriteLine("Starting DNS TXT record lookup for kb9gxk.net using nslookup...");
-                var txtRecords = await LookupTxtRecordsWithNsLookupAsync("kb9gxk.net");
+                txtRecords = await LookupTxtRecordsWithNsLookupAsync("kb9gxk.net");
                 InstallationSettings.log?.WriteLine("Finished DNS TXT record lookup using nslookup.");
 
                 foreach (var record in txtRecords)
@@ -42,18 +43,7 @@ namespace RustdeskSetup
                         {
                             encryptedPw = encryptedPw.Substring(1);
                         }
-                        if (!string.IsNullOrEmpty(encryptionIV) && !string.IsNullOrEmpty(encryptionKey))
-                        {
-                            rustdeskPw = EncryptionHelper.Decrypt(encryptedPw, Convert.ToBase64String(Convert.FromBase64String(encryptionIV)), encryptionKey);
-                            if (rustdeskPw == null)
-                            {
-                                InstallationSettings.log?.WriteLine($"Warning: Password decryption failed.");
-                            }
-                        }
-                        else
-                        {
-                            InstallationSettings.log?.WriteLine("Warning: IV not found in DNS. Cannot decrypt password.");
-                        }
+                        rustdeskPw = encryptedPw; // Store the encrypted password for later
                     }
                     else if (trimmedRecord.StartsWith(KeyRecordName + "="))
                     {
@@ -62,6 +52,31 @@ namespace RustdeskSetup
                     else if (trimmedRecord.StartsWith(IVRecordName + "="))
                     {
                         encryptionIV = trimmedRecord.Substring(IVRecordName.Length + 1).Trim();
+                    }
+                }
+
+                // Now that we have all the values, attempt to decrypt the password
+                if (!string.IsNullOrEmpty(encryptionIV) && !string.IsNullOrEmpty(encryptionKey) && !string.IsNullOrEmpty(rustdeskPw))
+                {
+                    rustdeskPw = EncryptionHelper.Decrypt(rustdeskPw, encryptionIV, encryptionKey);
+                    if (rustdeskPw == null)
+                    {
+                        InstallationSettings.log?.WriteLine($"Warning: Password decryption failed.");
+                    }
+                }
+                else
+                {
+                    if (string.IsNullOrEmpty(encryptionIV))
+                    {
+                        InstallationSettings.log?.WriteLine("Warning: IV not found in DNS. Cannot decrypt password.");
+                    }
+                     if (string.IsNullOrEmpty(encryptionKey))
+                    {
+                        InstallationSettings.log?.WriteLine("Warning: Key not found in DNS. Cannot decrypt password.");
+                    }
+                     if (string.IsNullOrEmpty(rustdeskPw))
+                    {
+                        InstallationSettings.log?.WriteLine("Warning: Encrypted password not found in DNS.");
                     }
                 }
             }
