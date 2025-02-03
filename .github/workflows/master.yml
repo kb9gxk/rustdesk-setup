@@ -49,6 +49,8 @@ jobs:
 
       - name: Checkout code
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # Required to fetch all tags and history
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
@@ -217,6 +219,38 @@ jobs:
           name: signed-rustdesk-installers
           path: artifacts/default/*.exe
 
+      - name: Determine Previous Tag or Initial Commit
+        id: get_previous_tag
+        run: |
+          $previousTag = git describe --tags --abbrev=0 --always
+          if ($previousTag -eq "") {
+            $initialCommit = git rev-list --max-parents=0 HEAD
+            echo "previous_ref=$initialCommit" >> $GITHUB_ENV
+            echo "::set-output name=previous_ref::$initialCommit"
+          } else {
+            echo "previous_ref=$previousTag" >> $GITHUB_ENV
+            echo "::set-output name=previous_ref::$previousTag"
+          }
+        shell: pwsh
+
+      - name: Generate Release Body
+        id: generate_release_body
+        run: |
+          $previousRef = "${{ steps.get_previous_tag.outputs.previous_ref }}"
+          $currentRef = "${{ github.sha }}"
+          Write-Host "Previous Ref: $previousRef"
+          Write-Host "Current Ref: $currentRef"
+          $changes = git diff --name-only $previousRef $currentRef
+          if ($changes) {
+              $commitMessages = git log --pretty=format:"- %s" $previousRef..$currentRef
+              $formattedBody = "Key Changes:\n$commitMessages"
+          } else {
+              $formattedBody = "No significant changes since previous release."
+          }
+          echo "release_body=$formattedBody" >> $GITHUB_ENV
+          echo "::set-output name=release_body::$formattedBody"
+        shell: pwsh
+
       - name: Create GitHub Release
         id: create_release
         uses: actions/create-release@v1
@@ -225,7 +259,7 @@ jobs:
         with:
           tag_name: 'v${{ needs.generate_version.outputs.fullversion }}'
           release_name: 'Rustdesk Installer Release ${{ needs.generate_version.outputs.fullversion }}'
-          body: This release contains the signed Rustdesk installers.
+          body: ${{ steps.generate_release_body.outputs.release_body }}
           draft: false
           prerelease: false
 
