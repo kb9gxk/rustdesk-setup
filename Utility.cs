@@ -12,26 +12,68 @@ namespace RustdeskSetup
 
             try
             {
-                 using (var process = new Process())
+                // Configure Rustdesk with the provided config (if any)
+                if (!string.IsNullOrEmpty(rustdeskCfg))
                 {
-                    process.StartInfo.FileName = runMe;
-
                     // Strip any leading '=' from rustdeskCfg
-                    if (!string.IsNullOrEmpty(rustdeskCfg) && rustdeskCfg.StartsWith("="))
+                    if (rustdeskCfg.StartsWith("="))
                     {
                         rustdeskCfg = rustdeskCfg.Substring(1); // Remove the leading '=' as it's not required
                     }
-
-                    var arguments = $"--config {rustdeskCfg}";
-                    if (!string.IsNullOrEmpty(rustdeskPw))
+                    
+                    InstallationSettings.log?.WriteLine($"Setting Rustdesk config: {rustdeskCfg}");
+                    using (var configProcess = new Process())
                     {
-                        arguments += $" --password {rustdeskPw}";
-                    }
+                        configProcess.StartInfo.FileName = runMe;
+                        configProcess.StartInfo.Arguments = $"--config {rustdeskCfg}";
+                        configProcess.StartInfo.UseShellExecute = false;
+                        configProcess.Start();
+                        configProcess.WaitForExit(); // Wait for config to be set
 
-                    process.StartInfo.Arguments = arguments;
-                    process.StartInfo.UseShellExecute = false;
-                    process.Start();
-                    if (process.HasExited)
+                        if (configProcess.ExitCode != 0)
+                        {
+                            InstallationSettings.log?.WriteLine($"Error setting Rustdesk config: Process exited with code {configProcess.ExitCode}");
+                        }
+                        else
+                        {
+                            InstallationSettings.log?.WriteLine("Rustdesk config set successfully.");
+                        }
+                    }
+                }
+
+                // Configure Rustdesk with the provided password (if any)
+                if (!string.IsNullOrEmpty(rustdeskPw))
+                {
+                    InstallationSettings.log?.WriteLine($"Setting Rustdesk password.");
+                    using (var passwordProcess = new Process())
+                    {
+                        passwordProcess.StartInfo.FileName = runMe;
+                        passwordProcess.StartInfo.Arguments = $"--password {rustdeskPw}";
+                        passwordProcess.StartInfo.UseShellExecute = false;
+                        passwordProcess.Start();
+                        passwordProcess.WaitForExit(); // Wait for password to be set
+
+                        if (passwordProcess.ExitCode != 0)
+                        {
+                            InstallationSettings.log?.WriteLine($"Error setting Rustdesk password: Process exited with code {passwordProcess.ExitCode}");
+                        }
+                        else
+                        {
+                            InstallationSettings.log?.WriteLine("Rustdesk password set successfully.");
+                        }
+                    }
+                }
+
+
+                // Start Rustdesk normally after configuration
+                InstallationSettings.log?.WriteLine("Starting Rustdesk normally.");
+                using (var startProcess = new Process())
+                {
+                    startProcess.StartInfo.FileName = runMe;
+                    startProcess.StartInfo.UseShellExecute = false;
+                    startProcess.Start();
+
+                    if (startProcess.HasExited)
                     {
                         InstallationSettings.log?.WriteLine($"Error starting Rustdesk: Process exited immediately.");
                     }
