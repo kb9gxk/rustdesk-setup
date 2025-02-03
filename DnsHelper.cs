@@ -22,7 +22,7 @@ namespace RustdeskSetup
             {
                 InstallationSettings.log?.WriteLine("Starting DNS TXT record lookup for kb9gxk.net...");
                 var dnsRecords = await LookupTxtRecordsAsync("kb9gxk.net");
-                 InstallationSettings.log?.WriteLine("Finished DNS TXT record lookup.");
+                InstallationSettings.log?.WriteLine("Finished DNS TXT record lookup.");
                 foreach (var record in dnsRecords)
                 {
                     string trimmedRecord = record.Trim();
@@ -49,23 +49,26 @@ namespace RustdeskSetup
             return (rustdeskCfg, rustdeskPw, encryptionKey);
         }
 
-        // Rest of the DnsHelper.cs code remains the same
         private static async Task<List<string>> LookupTxtRecordsAsync(string domain)
         {
             List<string> txtRecords = new List<string>();
             try
             {
+                InstallationSettings.log?.WriteLine($"Starting DNS resolution for domain: {domain}");
                 var addresses = await Dns.GetHostAddressesAsync(domain);
+                InstallationSettings.log?.WriteLine($"DNS resolution completed. Addresses found: {addresses.Length}");
                 if (addresses.Length > 0)
                 {
                     using (var client = new UdpClient())
                     {
                         var serverEndpoint = new IPEndPoint(addresses[0], 53);
                         byte[] query = BuildDnsQuery(domain, DnsQueryType.TXT);
-
+                        InstallationSettings.log?.WriteLine($"Sending DNS query to: {serverEndpoint}");
                         await client.SendAsync(query, query.Length, serverEndpoint);
+                        InstallationSettings.log?.WriteLine($"DNS query sent.");
                         var result = await client.ReceiveAsync();
                         byte[] response = result.Buffer;
+                        InstallationSettings.log?.WriteLine($"DNS response received. Response length: {response.Length}");
                         txtRecords = ParseDnsResponse(response);
                     }
                 }
@@ -107,31 +110,24 @@ namespace RustdeskSetup
             query.Add(0x00); // End of domain
             query.AddRange(new byte[] { 0x00, (byte)queryType, 0x00, 0x01 }); // Query type (TXT) and class (IN)
 
-            return query.ToArray();
-        }
+            InstallationSettings.log?.WriteLine($"Built DNS query. Query bytes: {BitConverter.ToString(query.ToArray())}");
 
-        private enum DnsQueryType : ushort
-        {
-            A = 0x0001,
-            NS = 0x0002,
-            CNAME = 0x0005,
-            MX = 0x000F,
-            TXT = 0x0010,
-            AAAA = 0x001C,
-            SRV = 0x0021,
+            return query.ToArray();
         }
 
         private static List<string> ParseDnsResponse(byte[] response)
         {
+            InstallationSettings.log?.WriteLine($"Parsing DNS response. Response bytes: {BitConverter.ToString(response)}");
             List<string> txtRecords = new List<string>();
             int index = 12; // Skip header
-            // Skip Questions
+                            // Skip Questions
             while (response[index] != 0)
             {
                 index += response[index] + 1;
             }
             index += 5; // Skip QTYPE, QCLASS
             ushort answerCount = (ushort)((response[6] << 8) | response[7]);
+            InstallationSettings.log?.WriteLine($"Answer count: {answerCount}");
             for (int i = 0; i < answerCount; i++)
             {
                 // Skip Name
@@ -144,6 +140,7 @@ namespace RustdeskSetup
                 index += 8; // Skip TYPE, CLASS, TTL
                 ushort rdLength = (ushort)((response[index] << 8) | response[index + 1]);
                 index += 2;
+                InstallationSettings.log?.WriteLine($"Record type: {type}, rdLength: {rdLength}");
                 if (type == (ushort)DnsQueryType.TXT)
                 {
                     txtRecords.Add(Encoding.UTF8.GetString(response, index + 1, rdLength - 1));
