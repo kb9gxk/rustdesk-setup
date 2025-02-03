@@ -1,7 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
+using System.Net.NetworkInformation;
 using System.Net.Sockets;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace RustdeskSetup
@@ -54,42 +57,122 @@ namespace RustdeskSetup
 
         private static async Task<List<string>> LookupTxtRecordsAsync(string domain)
         {
-            List<string> txtRecords = new List<string>();
-             try
-             {
-                 IPHostEntry hostEntry = await Dns.GetHostEntryAsync(domain);
-                 if (hostEntry.AddressList.Length == 0)
-                 {
-                     InstallationSettings.log?.WriteLine($"No IP addresses found for domain: {domain}");
-                     return txtRecords;
-                 }
+            return await Task.Run(() =>
+            {
+                List<string> txtRecords = new();
+                var dnsServers = GetSystemDnsServers();
 
-                 // Use the first IP Address to query for TXT records
-                 IPAddress ipAddress = hostEntry.AddressList[0];
-                 InstallationSettings.log?.WriteLine($"Using IP Address: {ipAddress} for DNS TXT lookup");
+                if (dnsServers.Count == 0)
+                {
+                    InstallationSettings.log?.WriteLine("❌ No system DNS servers found.");
+                    return txtRecords;
+                }
 
-                 var result = await Dns.GetHostEntryAsync(ipAddress);
+                foreach (var dnsServer in dnsServers)
+                {
+                    InstallationSettings.log?.WriteLine($"🔍 Querying DNS server: {dnsServer}");
+                    byte[] query = BuildDnsQuery(domain);
+                    byte[] response = SendDnsQuery(query, dnsServer);
 
-                 if(result.Aliases.Length == 0)
-                 {
-                     InstallationSettings.log?.WriteLine($"No TXT records found for domain: {domain}");
-                     return txtRecords;
-                 }
+                    if (response != null)
+                    {
+                        txtRecords.AddRange(ParseTxtRecords(response));
+                        if (txtRecords.Count > 0) break; // Stop once we get a valid response
+                    }
+                }
 
-                 foreach(var alias in result.Aliases)
-                 {
-                     if(alias.StartsWith("v=spf1")) continue; // Skip SPF Records
-                     txtRecords.Add(alias);
-                 }
-             }
-             catch (SocketException ex)
-             {
-                 InstallationSettings.log?.WriteLine($"Socket Exception while resolving DNS TXT records: {ex.Message}");
-             }
-             catch (Exception ex)
-             {
-                 InstallationSettings.log?.WriteLine($"Exception while resolving DNS TXT records: {ex.Message}");
-             }
+                return txtRecords;
+            });
+        }
+
+        private static List<string> GetSystemDnsServers()
+        {
+            List<string> dnsServers = new();
+
+            foreach (var adapter in NetworkInterface.GetAllNetworkInterfaces())
+            {
+                if (adapter.OperationalStatus == OperationalStatus.Up)
+                {
+                    foreach (var dns in adapter.GetIPProperties().DnsAddresses)
+                    {
+                        if (dns.AddressFamily == AddressFamily.InterNetwork) // IPv4 only
+                        {
+                            dnsServers.Add(dns.ToString());
+                        }
+                    }
+                }
+            }
+
+            return dnsServers;
+        }
+
+        private static byte[] BuildDnsQuery(string domain)
+        {
+            List<byte> packet = new();
+            
+            // Transaction ID (random)
+            packet.AddRange(new byte[] { 0x12, 0x34 });
+
+            // Flags: Standard Query (0x0100)
+            packet.AddRange(new byte[] { 0x01, 0x00 });
+
+            // Questions: 1
+            packet.AddRange(new byte[] { 0x00, 0x01 });
+
+            // Answer, Authority, and Additional RRs: 0
+            packet.AddRange(new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 });
+
+            // Encode domain name
+            foreach (var part in domain.Split('.'))
+            {
+                packet.Add((byte)part.Length);
+                packet.AddRange(Encoding.ASCII.GetBytes(part));
+            }
+            packet.Add(0); // End of domain name
+
+            // Query Type: TXT (0x0010)
+            packet.AddRange(new byte[] { 0x00, 0x10 });
+
+            // Query Class: IN (0x0001)
+            packet.AddRange(new byte[] { 0x00, 0x01 });
+
+            return packet.ToArray();
+        }
+
+        private static byte[] SendDnsQuery(byte[] query, string dnsServer)
+        {
+            using UdpClient udpClient = new();
+            udpClient.Connect(dnsServer, 53);
+            udpClient.Send(query, query.Length);
+
+            IPEndPoint remoteEP = new(IPAddress.Any, 0);
+            return udpClient.Receive(ref remoteEP);
+        }
+
+        private static List<string> ParseTxtRecords(byte[] response)
+        {
+            List<string> txtRecords = new();
+            int index = 12; // Skip header
+
+            // Skip the query section
+            while (response[index] != 0)
+                index++;
+            index += 5; // Move past NULL terminator, QTYPE, and QCLASS
+
+            // Skip Answer Section's Name (compression or domain name)
+            if (response[index] >= 192) index += 2; // Name is compressed
+            else while (response[index] != 0) index++; // Regular domain
+            index++;
+
+            // Read Type, Class, TTL (Skip these)
+            index += 8;
+
+            // Read Data Length
+            int txtLength = response[index + 1];
+            index += 2;
+
+            // Read TXT Record Data
+            txtRecords.Add(Encoding.ASCII.GetString(response, index + 1, txtLength - 1));
 
             return txtRecords;
         }
