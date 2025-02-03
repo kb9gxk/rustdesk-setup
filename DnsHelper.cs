@@ -29,7 +29,7 @@ namespace RustdeskSetup
 
                 foreach (var record in txtRecords)
                 {
-                    string trimmedRecord = record.Trim();
+                    string trimmedRecord = record.Trim().TrimStart('\uFEFF'); // Trim BOM and whitespace
                     InstallationSettings.log?.WriteLine($"Found DNS TXT record: {trimmedRecord}");
 
                     if (trimmedRecord.StartsWith(ConfigRecordName + "="))
@@ -39,6 +39,10 @@ namespace RustdeskSetup
                     else if (trimmedRecord.StartsWith(PasswordRecordName + "="))
                     {
                         string encryptedPw = trimmedRecord.Substring(PasswordRecordName.Length + 1).Trim();
+                        if (encryptedPw.StartsWith("="))
+                        {
+                            encryptedPw = encryptedPw.Substring(1);
+                        }
                         rustdeskPw = EncryptionHelper.Decrypt(encryptedPw);
                     }
                     else if (trimmedRecord.StartsWith(KeyRecordName + "="))
