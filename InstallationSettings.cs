@@ -24,8 +24,6 @@ namespace RustdeskSetup
             {
                 log = new StreamWriter(logFilePath, append: true) { AutoFlush = true };
                 log.WriteLine($"--- Rustdesk-{editionString} started at: {DateTime.Now} ---");
-                Console.SetOut(log);
-                Console.SetError(log);
             }
             catch (Exception ex)
             {
@@ -38,9 +36,6 @@ namespace RustdeskSetup
             try
             {
                 log?.WriteLine($"--- Rustdesk-{editionString} ended at: {DateTime.Now} ---");
-                var standardOutput = new StreamWriter(Console.OpenStandardOutput()) { AutoFlush = true };
-                Console.SetOut(standardOutput);
-                Console.SetError(standardOutput);
                 log?.Dispose();
             }
             catch (Exception ex)
@@ -49,10 +44,10 @@ namespace RustdeskSetup
             }
         }
 
-        internal static void HideWindow()
+         internal static void WriteToConsoleAndLog(string message)
         {
-            var handle = NativeMethods.GetConsoleWindow();
-            NativeMethods.ShowWindow(handle, NativeMethods.SW_HIDE);
+            Console.WriteLine(message);
+            log?.WriteLine(message);
         }
     }
 }

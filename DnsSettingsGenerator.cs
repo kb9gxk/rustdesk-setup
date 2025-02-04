@@ -8,7 +8,7 @@ namespace RustdeskSetup
     {
         internal static void GenerateAndSaveDnsSettings(string password)
         {
-            InstallationSettings.log?.WriteLine("Generating DNS settings...");
+            InstallationSettings.WriteToConsoleAndLog("Generating DNS settings...");
 
             byte[] key = EncryptionHelper.GenerateRandomKey();
             byte[] iv = EncryptionHelper.GenerateRandomIV();
@@ -29,12 +29,12 @@ namespace RustdeskSetup
                     writer.WriteLine($"_rdkey=\"{keyString}\"");
                     writer.WriteLine($"_rdiv=\"{ivString}\"");
                 }
-                InstallationSettings.log?.WriteLine($"DNS settings saved to: {dnsSettingsFilePath}");
+                InstallationSettings.WriteToConsoleAndLog($"DNS settings saved to: {dnsSettingsFilePath}");
                 Console.WriteLine($"DNS settings saved to: {dnsSettingsFilePath}");
             }
             catch (Exception ex)
             {
-                InstallationSettings.log?.WriteLine($"Error saving DNS settings: {ex.Message}");
+                InstallationSettings.WriteToConsoleAndLog($"Error saving DNS settings: {ex.Message}");
                 Console.WriteLine($"Error saving DNS settings: {ex.Message}");
             }
         }

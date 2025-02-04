@@ -23,9 +23,9 @@ namespace RustdeskSetup
 
             try
             {
-                InstallationSettings.log?.WriteLine("Starting DNS TXT record lookup for kb9gxk.net using nslookup...");
+                InstallationSettings.WriteToConsoleAndLog("Starting DNS TXT record lookup for kb9gxk.net using nslookup...");
                 txtRecords = await LookupTxtRecordsWithNsLookupAsync("kb9gxk.net");
-                InstallationSettings.log?.WriteLine("Finished DNS TXT record lookup using nslookup.");
+                InstallationSettings.WriteToConsoleAndLog("Finished DNS TXT record lookup using nslookup.");
 
                 foreach (var record in txtRecords)
                 {
@@ -34,7 +34,7 @@ namespace RustdeskSetup
                     // Check if the record starts with "_rd" before processing or logging
                     if (trimmedRecord.StartsWith("_rd"))
                     {
-                        InstallationSettings.log?.WriteLine($"Found DNS TXT record: {trimmedRecord}");
+                        InstallationSettings.WriteToConsoleAndLog($"Found DNS TXT record: {trimmedRecord}");
 
                         if (trimmedRecord.StartsWith(ConfigRecordName + "="))
                         {
@@ -62,28 +62,28 @@ namespace RustdeskSetup
                     rustdeskPw = EncryptionHelper.Decrypt(rustdeskPw, encryptionIV, encryptionKey);
                     if (rustdeskPw == null)
                     {
-                        InstallationSettings.log?.WriteLine($"Warning: Password decryption failed.");
+                        InstallationSettings.WriteToConsoleAndLog($"Warning: Password decryption failed.");
                     }
                 }
                 else
                 {
                     if (string.IsNullOrEmpty(encryptionIV))
                     {
-                        InstallationSettings.log?.WriteLine("Warning: IV not found in DNS. Cannot decrypt password.");
+                        InstallationSettings.WriteToConsoleAndLog("Warning: IV not found in DNS. Cannot decrypt password.");
                     }
                     if (string.IsNullOrEmpty(encryptionKey))
                     {
-                        InstallationSettings.log?.WriteLine("Warning: Key not found in DNS. Cannot decrypt password.");
+                        InstallationSettings.WriteToConsoleAndLog("Warning: Key not found in DNS. Cannot decrypt password.");
                     }
                     if (string.IsNullOrEmpty(rustdeskPw))
                     {
-                        InstallationSettings.log?.WriteLine("Warning: Encrypted password not found in DNS.");
+                        InstallationSettings.WriteToConsoleAndLog("Warning: Encrypted password not found in DNS.");
                     }
                 }
             }
             catch (Exception ex)
             {
-                InstallationSettings.log?.WriteLine($"Error fetching DNS TXT records: {ex.Message}");
+                InstallationSettings.WriteToConsoleAndLog($"Error fetching DNS TXT records: {ex.Message}");
             }
 
             return (rustdeskCfg, rustdeskPw, encryptionKey, encryptionIV);
@@ -110,7 +110,7 @@ namespace RustdeskSetup
 
                     if (process.ExitCode != 0)
                     {
-                        InstallationSettings.log?.WriteLine($"nslookup exited with code {process.ExitCode}. Error: {error}");
+                        InstallationSettings.WriteToConsoleAndLog($"nslookup exited with code {process.ExitCode}. Error: {error}");
                         return txtRecords; // Return empty list on error
                     }
                     // Regex to extract TXT record content
@@ -123,13 +123,13 @@ namespace RustdeskSetup
 
                     if (txtRecords.Count == 0)
                     {
-                        InstallationSettings.log?.WriteLine($"❌ No TXT records found for {domain} using nslookup.");
+                        InstallationSettings.WriteToConsoleAndLog($"❌ No TXT records found for {domain} using nslookup.");
                     }
                 }
             }
             catch (Exception ex)
             {
-                InstallationSettings.log?.WriteLine($"❌ Error during nslookup: {ex.Message}");
+                InstallationSettings.WriteToConsoleAndLog($"❌ Error during nslookup: {ex.Message}");
             }
             return txtRecords;
         }

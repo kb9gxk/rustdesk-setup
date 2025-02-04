@@ -85,70 +85,70 @@ namespace RustdeskSetup
 
             if (parsedArgs.IsJeffBuild)
             {
-                InstallationSettings.log?.WriteLine("Jeff Build Detected, checking DNS TXT records");
+                InstallationSettings.WriteToConsoleAndLog("Jeff Build Detected, checking DNS TXT records");
                 Configuration.SetJeffDefaults();
-                InstallationSettings.log?.WriteLine("Attempting to retrieve DNS TXT records...");
+                InstallationSettings.WriteToConsoleAndLog("Attempting to retrieve DNS TXT records...");
                 try
                 {
                     (dnsConfig, dnsPassword, dnsKey, dnsIv) = await DnsHelper.GetRustdeskConfigFromDnsAsync();
-                    InstallationSettings.log?.WriteLine("Finished retrieving DNS TXT records.");
+                    InstallationSettings.WriteToConsoleAndLog("Finished retrieving DNS TXT records.");
                     if (!string.IsNullOrEmpty(dnsConfig))
                     {
                         Configuration.RustdeskCfg = dnsConfig;
-                        InstallationSettings.log?.WriteLine($"Retrieving Config: Successful"); // Modified log
+                        InstallationSettings.WriteToConsoleAndLog($"Retrieving Config: Successful"); // Modified log
                     }
                     else
                     {
-                        InstallationSettings.log?.WriteLine("Retrieving Config: Not Found");
+                        InstallationSettings.WriteToConsoleAndLog("Retrieving Config: Not Found");
                     }
                     if (!string.IsNullOrEmpty(dnsPassword))
                     {
                         Configuration.RustdeskPw = dnsPassword;
-                        InstallationSettings.log?.WriteLine("Retrieving Password: Successful");
+                        InstallationSettings.WriteToConsoleAndLog("Retrieving Password: Successful");
                     }
                     else
                     {
-                        InstallationSettings.log?.WriteLine("Retrieving Password: Not Found");
+                        InstallationSettings.WriteToConsoleAndLog("Retrieving Password: Not Found");
                     }
                     if (!string.IsNullOrEmpty(dnsKey))
                     {
-                        InstallationSettings.log?.WriteLine($"Retrieving Key: Successful");
+                        InstallationSettings.WriteToConsoleAndLog($"Retrieving Key: Successful");
                         EncryptionHelper.SetEncryptionKey(dnsKey);
                     }
                     else
                     {
-                        InstallationSettings.log?.WriteLine("Retrieving Key: Not Found");
+                        InstallationSettings.WriteToConsoleAndLog("Retrieving Key: Not Found");
                         EncryptionHelper.SetEncryptionKey((string)null); // Set to null to trigger default key logic
                     }
                     if (!string.IsNullOrEmpty(dnsIv))
                     {
-                        InstallationSettings.log?.WriteLine($"Retrieving IV: Successful");
+                        InstallationSettings.WriteToConsoleAndLog($"Retrieving IV: Successful");
                     }
                     else
                     {
-                        InstallationSettings.log?.WriteLine("Retrieving IV: Not Found");
+                        InstallationSettings.WriteToConsoleAndLog("Retrieving IV: Not Found");
                     }
                     if (!string.IsNullOrEmpty(dnsPassword) && !string.IsNullOrEmpty(dnsKey) && !string.IsNullOrEmpty(dnsIv))
                     {
                         //string? decryptedPassword = EncryptionHelper.Decrypt(dnsPassword, dnsIv, dnsKey);
                         //if (decryptedPassword != null)
                         //{
-                        //    InstallationSettings.log?.WriteLine("Decrypting Password: Successful");
+                        //    InstallationSettings.WriteToConsoleAndLog("Decrypting Password: Successful");
                         //}
                         //else
                         //{
-                        //     InstallationSettings.log?.WriteLine("Decrypting Password: Failed");
+                        //     InstallationSettings.WriteToConsoleAndLog("Decrypting Password: Failed");
                         //}
-                        InstallationSettings.log?.WriteLine("Decrypting Password: Skipped, using decrypted password from DNS.");
+                        InstallationSettings.WriteToConsoleAndLog("Decrypting Password: Skipped, using decrypted password from DNS.");
                     }
                     else
                     {
-                        InstallationSettings.log?.WriteLine("Decrypting Password: Skipped due to missing DNS values.");
+                        InstallationSettings.WriteToConsoleAndLog("Decrypting Password: Skipped due to missing DNS values.");
                     }
                 }
                 catch (Exception ex)
                 {
-                    InstallationSettings.log?.WriteLine($"Error during DNS lookup: {ex.Message}");
+                    InstallationSettings.WriteToConsoleAndLog($"Error during DNS lookup: {ex.Message}");
                 }
 
             }
@@ -167,7 +167,7 @@ namespace RustdeskSetup
 
             if (downloadUrl == null || version == null)
             {
-                InstallationSettings.log?.WriteLine("Failed to get Rustdesk download information.");
+                InstallationSettings.WriteToConsoleAndLog("Failed to get Rustdesk download information.");
                 InstallationSettings.ResetConsoleOutput();
                 return;
             }
@@ -183,10 +183,12 @@ namespace RustdeskSetup
                 Utility.ConfigureAndRunRustdesk(rustdeskId, runMe, Configuration.RustdeskCfg, Configuration.RustdeskPw);
                 Utility.SaveRustdeskInfo(rustdeskId);
                 Utility.DisplayPopup(rustdeskId, version);
+                Console.WriteLine("Press any key to exit.");
+                Console.ReadKey();
             }
             else
             {
-                InstallationSettings.log?.WriteLine("Rustdesk ID not found.");
+                InstallationSettings.WriteToConsoleAndLog("Rustdesk ID not found.");
             }
 
             if (!string.IsNullOrEmpty(InstallationSettings.rustdeskExe))
@@ -195,7 +197,7 @@ namespace RustdeskSetup
             }
             else
             {
-                InstallationSettings.log?.WriteLine("Skipping cleanup, rustdeskExe is null or empty.");
+                InstallationSettings.WriteToConsoleAndLog("Skipping cleanup, rustdeskExe is null or empty.");
             }
             InstallationSettings.ResetConsoleOutput();
         }

@@ -8,7 +8,7 @@ namespace RustdeskSetup
     {
         internal static void ConfigureAndRunRustdesk(string rustdeskId, string runMe, string rustdeskCfg, string rustdeskPw)
         {
-            InstallationSettings.log?.WriteLine("Configuring and starting Rustdesk...");
+            InstallationSettings.WriteToConsoleAndLog("Configuring and starting Rustdesk...");
 
             try
             {
@@ -21,7 +21,7 @@ namespace RustdeskSetup
                         rustdeskCfg = rustdeskCfg.Substring(1); // Remove the leading '=' as it's not required
                     }
                     
-                    InstallationSettings.log?.WriteLine($"Setting Rustdesk config: {rustdeskCfg}");
+                    InstallationSettings.WriteToConsoleAndLog($"Setting Rustdesk config: {rustdeskCfg}");
                     using (var configProcess = new Process())
                     {
                         configProcess.StartInfo.FileName = runMe;
@@ -32,11 +32,11 @@ namespace RustdeskSetup
 
                         if (configProcess.ExitCode != 0)
                         {
-                            InstallationSettings.log?.WriteLine($"Error setting Rustdesk config: Process exited with code {configProcess.ExitCode}");
+                            InstallationSettings.WriteToConsoleAndLog($"Error setting Rustdesk config: Process exited with code {configProcess.ExitCode}");
                         }
                         else
                         {
-                            InstallationSettings.log?.WriteLine("Rustdesk config set successfully.");
+                            InstallationSettings.WriteToConsoleAndLog("Rustdesk config set successfully.");
                         }
                     }
                 }
@@ -44,7 +44,7 @@ namespace RustdeskSetup
                 // Configure Rustdesk with the provided password (if any)
                 if (!string.IsNullOrEmpty(rustdeskPw))
                 {
-                    InstallationSettings.log?.WriteLine($"Setting Rustdesk password.");
+                    InstallationSettings.WriteToConsoleAndLog($"Setting Rustdesk password.");
                     using (var passwordProcess = new Process())
                     {
                         passwordProcess.StartInfo.FileName = runMe;
@@ -55,18 +55,18 @@ namespace RustdeskSetup
 
                         if (passwordProcess.ExitCode != 0)
                         {
-                            InstallationSettings.log?.WriteLine($"Error setting Rustdesk password: Process exited with code {passwordProcess.ExitCode}");
+                            InstallationSettings.WriteToConsoleAndLog($"Error setting Rustdesk password: Process exited with code {passwordProcess.ExitCode}");
                         }
                         else
                         {
-                            InstallationSettings.log?.WriteLine("Rustdesk password set successfully.");
+                            InstallationSettings.WriteToConsoleAndLog("Rustdesk password set successfully.");
                         }
                     }
                 }
 
 
                 // Start Rustdesk normally after configuration
-                InstallationSettings.log?.WriteLine("Starting Rustdesk normally.");
+                InstallationSettings.WriteToConsoleAndLog("Starting Rustdesk normally.");
                 using (var startProcess = new Process())
                 {
                     startProcess.StartInfo.FileName = runMe;
@@ -75,17 +75,17 @@ namespace RustdeskSetup
 
                     if (startProcess.HasExited)
                     {
-                        InstallationSettings.log?.WriteLine($"Error starting Rustdesk: Process exited immediately.");
+                        InstallationSettings.WriteToConsoleAndLog($"Error starting Rustdesk: Process exited immediately.");
                     }
                     else
                     {
-                        InstallationSettings.log?.WriteLine("Rustdesk started successfully.");
+                        InstallationSettings.WriteToConsoleAndLog("Rustdesk started successfully.");
                     }
                 }
             }
             catch (Exception ex)
             {
-                InstallationSettings.log?.WriteLine($"Error configuring or starting Rustdesk: {ex.Message}");
+                InstallationSettings.WriteToConsoleAndLog($"Error configuring or starting Rustdesk: {ex.Message}");
             }
         }
 
@@ -93,13 +93,13 @@ namespace RustdeskSetup
         {
             try
             {
-                InstallationSettings.log?.WriteLine($"Computer: {Environment.MachineName}");
-                InstallationSettings.log?.WriteLine($"ID: {rustdeskId}");
+                InstallationSettings.WriteToConsoleAndLog($"Computer: {Environment.MachineName}");
+                InstallationSettings.WriteToConsoleAndLog($"ID: {rustdeskId}");
                 File.WriteAllText(InstallationSettings.RustdeskInfoFilePath, $"Computer: {Environment.MachineName}\nID: {rustdeskId}");
             }
             catch (Exception ex)
             {
-                InstallationSettings.log?.WriteLine($"Error saving Rustdesk info: {ex.Message}");
+                InstallationSettings.WriteToConsoleAndLog($"Error saving Rustdesk info: {ex.Message}");
             }
         }
 
@@ -112,7 +112,7 @@ namespace RustdeskSetup
             }
             catch (Exception ex)
             {
-                InstallationSettings.log?.WriteLine($"Error displaying popup: {ex.Message}");
+                InstallationSettings.WriteToConsoleAndLog($"Error displaying popup: {ex.Message}");
             }
         }
     }

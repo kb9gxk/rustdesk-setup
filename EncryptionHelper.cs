@@ -37,19 +37,19 @@ namespace RustdeskSetup
                     _key = Convert.FromBase64String(dnsKey); // Convert from base64
                     if (_key.Length != 32)
                     {
-                        InstallationSettings.log?.WriteLine($"Warning: DNS Key is not 32 bytes. Using default key.");
+                        InstallationSettings.WriteToConsoleAndLog($"Warning: DNS Key is not 32 bytes. Using default key.");
                         _key = _defaultKey;
                     }
                 }
                 catch (Exception ex)
                 {
-                    InstallationSettings.log?.WriteLine($"Error setting DNS Key: {ex.Message}. Using default key.");
+                    InstallationSettings.WriteToConsoleAndLog($"Error setting DNS Key: {ex.Message}. Using default key.");
                     _key = _defaultKey;
                 }
             }
             else
             {
-                InstallationSettings.log?.WriteLine($"Warning: DNS Key not found. Using default key.");
+                InstallationSettings.WriteToConsoleAndLog($"Warning: DNS Key not found. Using default key.");
                 _key = _defaultKey;
             }
         }
@@ -93,7 +93,7 @@ namespace RustdeskSetup
                 byte[] iv = Convert.FromBase64String(ivString); // Convert from base64
                 if (iv.Length != 16)
                 {
-                    InstallationSettings.log?.WriteLine($"Error: Invalid IV length. Expected 16 bytes, got {iv.Length} bytes.");
+                    InstallationSettings.WriteToConsoleAndLog($"Error: Invalid IV length. Expected 16 bytes, got {iv.Length} bytes.");
                     return null;
                 }
 
@@ -106,13 +106,13 @@ namespace RustdeskSetup
                         key = Convert.FromBase64String(keyString);
                         if (key.Length != 32)
                         {
-                            InstallationSettings.log?.WriteLine($"Warning: DNS Key is not 32 bytes. Using default key.");
+                            InstallationSettings.WriteToConsoleAndLog($"Warning: DNS Key is not 32 bytes. Using default key.");
                             key = _defaultKey;
                         }
                     }
                     catch (Exception ex)
                     {
-                        InstallationSettings.log?.WriteLine($"Error setting DNS Key: {ex.Message}. Using default key.");
+                        InstallationSettings.WriteToConsoleAndLog($"Error setting DNS Key: {ex.Message}. Using default key.");
                         key = _defaultKey;
                     }
                 }
@@ -128,14 +128,14 @@ namespace RustdeskSetup
                     using (StreamReader srDecrypt = new StreamReader(csDecrypt))
                     {
                         string decryptedText = srDecrypt.ReadToEnd();
-                        InstallationSettings.log?.WriteLine("Password decrypted successfully.");
+                        InstallationSettings.WriteToConsoleAndLog("Password decrypted successfully.");
                         return decryptedText;
                     }
                 }
             }
             catch (Exception ex)
             {
-                InstallationSettings.log?.WriteLine($"Error during password decryption: {ex.Message}");
+                InstallationSettings.WriteToConsoleAndLog($"Error during password decryption: {ex.Message}");
                 return null;
             }
         }

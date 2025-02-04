@@ -10,7 +10,7 @@ namespace RustdeskSetup
     {
         internal static async Task DownloadAndInstallRustdeskAsync(string url, string tempDir)
         {
-            InstallationSettings.log?.WriteLine($"Downloading latest {InstallationSettings.editionString} Rustdesk build...");
+            InstallationSettings.WriteToConsoleAndLog($"Downloading latest {InstallationSettings.editionString} Rustdesk build...");
 
             try
             {
@@ -47,7 +47,7 @@ namespace RustdeskSetup
                                 }
                                 catch (TaskCanceledException)
                                 {
-                                    InstallationSettings.log?.WriteLine("Rustdesk installation timed out.");
+                                    InstallationSettings.WriteToConsoleAndLog("Rustdesk installation timed out.");
                                     return;
                                 }
                             }
@@ -57,15 +57,15 @@ namespace RustdeskSetup
             }
             catch (HttpRequestException ex)
             {
-                InstallationSettings.log?.WriteLine($"Error downloading {InstallationSettings.editionString} Rustdesk: {ex.Message}");
+                InstallationSettings.WriteToConsoleAndLog($"Error downloading {InstallationSettings.editionString} Rustdesk: {ex.Message}");
             }
             catch (IOException ex)
             {
-                InstallationSettings.log?.WriteLine($"Error writing file: {ex.Message}");
+                InstallationSettings.WriteToConsoleAndLog($"Error writing file: {ex.Message}");
             }
             catch (Exception ex)
             {
-                InstallationSettings.log?.WriteLine($"Error downloading or installing {InstallationSettings.editionString} Rustdesk: {ex.Message}");
+                InstallationSettings.WriteToConsoleAndLog($"Error downloading or installing {InstallationSettings.editionString} Rustdesk: {ex.Message}");
             }
 
             // Wait for 20 seconds
@@ -81,13 +81,13 @@ namespace RustdeskSetup
             }
             catch (Exception ex)
             {
-                InstallationSettings.log?.WriteLine($"Error deleting desktop shortcut: {ex.Message}");
+                InstallationSettings.WriteToConsoleAndLog($"Error deleting desktop shortcut: {ex.Message}");
             }
         }
 
         internal static string? GetRustdeskId(string runMe, string rustdeskDir)
         {
-            InstallationSettings.log?.WriteLine("Getting Rustdesk ID...");
+            InstallationSettings.WriteToConsoleAndLog("Getting Rustdesk ID...");
             var processStartInfo = new ProcessStartInfo
             {
                 FileName = runMe,
@@ -110,7 +110,7 @@ namespace RustdeskSetup
                         }
                         else
                         {
-                            InstallationSettings.log?.WriteLine($"Error getting Rustdesk ID: Process exited with code {process.ExitCode}");
+                            InstallationSettings.WriteToConsoleAndLog($"Error getting Rustdesk ID: Process exited with code {process.ExitCode}");
                             return null;
                         }
                     }
@@ -118,7 +118,7 @@ namespace RustdeskSetup
             }
             catch (Exception ex)
             {
-                InstallationSettings.log?.WriteLine($"Error getting Rustdesk ID: {ex.Message}");
+                InstallationSettings.WriteToConsoleAndLog($"Error getting Rustdesk ID: {ex.Message}");
                 return null;
             }
             return null;
@@ -136,7 +136,7 @@ namespace RustdeskSetup
             }
             catch (Exception ex)
             {
-                InstallationSettings.log?.WriteLine($"Error cleaning up temp directory: {ex.Message}");
+                InstallationSettings.WriteToConsoleAndLog($"Error cleaning up temp directory: {ex.Message}");
             }
         }
 

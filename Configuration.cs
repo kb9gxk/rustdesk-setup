@@ -16,7 +16,7 @@ namespace RustdeskSetup
         {
             RustdeskCfg = DefaultJeffConfigValue;
             RustdeskPw = DefaultJeffPasswordValue;
-            InstallationSettings.log?.WriteLine("Jeff Defaults Set.");
+            InstallationSettings.WriteToConsoleAndLog("Jeff Defaults Set.");
         }
     }
 }
