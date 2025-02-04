@@ -52,15 +52,17 @@ namespace RustdeskSetup
                     Console.WriteLine($"DNS IV: {(dnsIv != null ? dnsIv : "Not Found")}");
                     if (!string.IsNullOrEmpty(dnsPassword) && !string.IsNullOrEmpty(dnsKey) && !string.IsNullOrEmpty(dnsIv))
                     {
-                        string? decryptedPassword = EncryptionHelper.Decrypt(dnsPassword, dnsIv, dnsKey);
-                        if (decryptedPassword != null)
-                        {
-                           Console.WriteLine("Password Decryption: Successful");
-                        }
-                        else
-                        {
-                            Console.WriteLine("Password Decryption: Failed");
-                        }
+                        // Do not decrypt again, use the password from DnsHelper
+                        //string? decryptedPassword = EncryptionHelper.Decrypt(dnsPassword, dnsIv, dnsKey);
+                        //if (decryptedPassword != null)
+                        //{
+                         //  Console.WriteLine("Password Decryption: Successful");
+                        //}
+                        //else
+                        //{
+                            //Console.WriteLine("Password Decryption: Failed");
+                        //}
+                        Console.WriteLine("Password Decryption: Skipped, using decrypted password from DNS.");
                     }
                     else
                     {
@@ -128,15 +130,16 @@ namespace RustdeskSetup
                     }
                     if (!string.IsNullOrEmpty(dnsPassword) && !string.IsNullOrEmpty(dnsKey) && !string.IsNullOrEmpty(dnsIv))
                     {
-                        string? decryptedPassword = EncryptionHelper.Decrypt(dnsPassword, dnsIv, dnsKey);
-                        if (decryptedPassword != null)
-                        {
-                            InstallationSettings.log?.WriteLine("Decrypting Password: Successful");
-                        }
-                        else
-                        {
-                             InstallationSettings.log?.WriteLine("Decrypting Password: Failed");
-                        }
+                        //string? decryptedPassword = EncryptionHelper.Decrypt(dnsPassword, dnsIv, dnsKey);
+                        //if (decryptedPassword != null)
+                        //{
+                        //    InstallationSettings.log?.WriteLine("Decrypting Password: Successful");
+                        //}
+                        //else
+                        //{
+                        //     InstallationSettings.log?.WriteLine("Decrypting Password: Failed");
+                        //}
+                        InstallationSettings.log?.WriteLine("Decrypting Password: Skipped, using decrypted password from DNS.");
                     }
                     else
                     {
