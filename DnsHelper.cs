@@ -43,10 +43,6 @@ namespace RustdeskSetup
                         else if (trimmedRecord.StartsWith(PasswordRecordName + "="))
                         {
                             string encryptedPw = trimmedRecord.Substring(PasswordRecordName.Length + 1).Trim();
-                            if (encryptedPw.StartsWith("="))
-                            {
-                                encryptedPw = encryptedPw.Substring(1);
-                            }
                             rustdeskPw = encryptedPw; // Store the encrypted password for later
                         }
                         else if (trimmedRecord.StartsWith(KeyRecordName + "="))

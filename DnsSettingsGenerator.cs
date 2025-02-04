@@ -25,7 +25,7 @@ namespace RustdeskSetup
                 using (StreamWriter writer = new StreamWriter(dnsSettingsFilePath))
                 {
                     writer.WriteLine("DNS TXT Record Settings:");
-                    writer.WriteLine($"_rdpw=\"={encryptedPassword}\""); // Password is now encrypted
+                    writer.WriteLine($"_rdpw=\"{encryptedPassword}\""); // Password is now encrypted
                     writer.WriteLine($"_rdkey=\"{keyString}\"");
                     writer.WriteLine($"_rdiv=\"{ivString}\"");
                 }
