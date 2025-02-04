@@ -23,9 +23,7 @@ namespace RustdeskSetup
 
             try
             {
-                InstallationSettings.WriteToConsoleAndLog("Starting DNS TXT record lookup for kb9gxk.net using nslookup...");
                 txtRecords = await LookupTxtRecordsWithNsLookupAsync("kb9gxk.net");
-                InstallationSettings.WriteToConsoleAndLog("Finished DNS TXT record lookup using nslookup.");
 
                 foreach (var record in txtRecords)
                 {
@@ -34,8 +32,6 @@ namespace RustdeskSetup
                     // Check if the record starts with "_rd" before processing or logging
                     if (trimmedRecord.StartsWith("_rd"))
                     {
-                        InstallationSettings.WriteToConsoleAndLog($"Found DNS TXT record: {trimmedRecord}");
-
                         if (trimmedRecord.StartsWith(ConfigRecordName + "="))
                         {
                             rustdeskCfg = trimmedRecord.Substring(ConfigRecordName.Length + 1).Trim();

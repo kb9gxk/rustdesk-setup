@@ -38,7 +38,7 @@ namespace RustdeskSetup
                 {
                     parsedArgs.GenerateDnsRecords = true;
                 }
-                else if (args[i].Equals("--test", StringComparison.OrdinalIgnoreCase))
+                else if (args[i].Equals("--dns-test", StringComparison.OrdinalIgnoreCase))
                 {
                     parsedArgs.ShouldTest = true;
                 }
@@ -119,7 +119,6 @@ namespace RustdeskSetup
             Console.WriteLine("--config=<value>   Set network configuration output from the Network Settings");
             Console.WriteLine("--password=<value> Set the permanent password for Rustdesk");
             Console.WriteLine("--generate-dns     Generate DNS TXT records for _rdpw, _rdkey, and _rdiv");
-            Console.WriteLine("--test             Test DNS and decryption (Jeff builds only)");
             Console.WriteLine("--help             Show this help message");
         }
     }

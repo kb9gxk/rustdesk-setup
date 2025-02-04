@@ -10,7 +10,6 @@ namespace RustdeskSetup
         static async Task Main(string[] args)
         {
             InstallationSettings.RedirectConsoleOutput();
-            // InstallationSettings.HideWindow();  // Removed for testing
 
             CommandLineArgs parsedArgs = CommandLineArgs.Parse();
 
@@ -52,16 +51,6 @@ namespace RustdeskSetup
                     Console.WriteLine($"DNS IV: {(dnsIv != null ? dnsIv : "Not Found")}");
                     if (!string.IsNullOrEmpty(dnsPassword) && !string.IsNullOrEmpty(dnsKey) && !string.IsNullOrEmpty(dnsIv))
                     {
-                        // Do not decrypt again, use the password from DnsHelper
-                        //string? decryptedPassword = EncryptionHelper.Decrypt(dnsPassword, dnsIv, dnsKey);
-                        //if (decryptedPassword != null)
-                        //{
-                         //  Console.WriteLine("Password Decryption: Successful");
-                        //}
-                        //else
-                        //{
-                            //Console.WriteLine("Password Decryption: Failed");
-                        //}
                         Console.WriteLine("Password Decryption: Skipped, using decrypted password from DNS.");
                     }
                     else
@@ -74,8 +63,6 @@ namespace RustdeskSetup
                     Console.WriteLine($"Error during DNS lookup: {ex.Message}");
                 }
                 InstallationSettings.ResetConsoleOutput();
-                Console.WriteLine("Press any key to exit.");
-                Console.ReadKey();
                 return;
             }
 
@@ -85,60 +72,28 @@ namespace RustdeskSetup
 
             if (parsedArgs.IsJeffBuild)
             {
-                InstallationSettings.WriteToConsoleAndLog("Jeff Build Detected, checking DNS TXT records");
                 Configuration.SetJeffDefaults();
-                InstallationSettings.WriteToConsoleAndLog("Attempting to retrieve DNS TXT records...");
                 try
                 {
                     (dnsConfig, dnsPassword, dnsKey, dnsIv) = await DnsHelper.GetRustdeskConfigFromDnsAsync();
-                    InstallationSettings.WriteToConsoleAndLog("Finished retrieving DNS TXT records.");
                     if (!string.IsNullOrEmpty(dnsConfig))
                     {
                         Configuration.RustdeskCfg = dnsConfig;
-                        InstallationSettings.WriteToConsoleAndLog($"Retrieving Config: Successful"); // Modified log
-                    }
-                    else
-                    {
-                        InstallationSettings.WriteToConsoleAndLog("Retrieving Config: Not Found");
                     }
                     if (!string.IsNullOrEmpty(dnsPassword))
                     {
                         Configuration.RustdeskPw = dnsPassword;
-                        InstallationSettings.WriteToConsoleAndLog("Retrieving Password: Successful");
-                    }
-                    else
-                    {
-                        InstallationSettings.WriteToConsoleAndLog("Retrieving Password: Not Found");
                     }
                     if (!string.IsNullOrEmpty(dnsKey))
                     {
-                        InstallationSettings.WriteToConsoleAndLog($"Retrieving Key: Successful");
                         EncryptionHelper.SetEncryptionKey(dnsKey);
                     }
                     else
                     {
-                        InstallationSettings.WriteToConsoleAndLog("Retrieving Key: Not Found");
                         EncryptionHelper.SetEncryptionKey((string)null); // Set to null to trigger default key logic
-                    }
-                    if (!string.IsNullOrEmpty(dnsIv))
-                    {
-                        InstallationSettings.WriteToConsoleAndLog($"Retrieving IV: Successful");
-                    }
-                    else
-                    {
-                        InstallationSettings.WriteToConsoleAndLog("Retrieving IV: Not Found");
                     }
                     if (!string.IsNullOrEmpty(dnsPassword) && !string.IsNullOrEmpty(dnsKey) && !string.IsNullOrEmpty(dnsIv))
                     {
-                        //string? decryptedPassword = EncryptionHelper.Decrypt(dnsPassword, dnsIv, dnsKey);
-                        //if (decryptedPassword != null)
-                        //{
-                        //    InstallationSettings.WriteToConsoleAndLog("Decrypting Password: Successful");
-                        //}
-                        //else
-                        //{
-                        //     InstallationSettings.WriteToConsoleAndLog("Decrypting Password: Failed");
-                        //}
                         InstallationSettings.WriteToConsoleAndLog("Decrypting Password: Skipped, using decrypted password from DNS.");
                     }
                     else
