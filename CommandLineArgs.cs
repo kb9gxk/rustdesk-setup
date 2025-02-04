@@ -102,7 +102,7 @@ namespace RustdeskSetup
             string executableName = Path.GetFileNameWithoutExtension(Process.GetCurrentProcess().ProcessName).ToLower();
             bool isNightlyBuild = executableName.StartsWith("rustdesk-nightly");
 
-            Console.WriteLine($"Usage: {executableName} [--stable|--nightly] [--config=<value>] [--password=<value>] [--help] [--generate-dns] [--test]");
+            Console.WriteLine($"Usage: {executableName} [--stable|--nightly] [--config=<value>] [--password=<value>] [--help] [--generate-dns]");
             Console.WriteLine();
 
             if (isNightlyBuild)
