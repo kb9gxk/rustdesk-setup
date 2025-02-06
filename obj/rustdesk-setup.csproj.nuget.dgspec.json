@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "B:\\rustdesk\\rustdesk-setup\\rustdesk-setup.csproj": {}
+    "Z:\\RustDesk\\rustdesk-setup\\rustdesk-setup.csproj": {}
   },
   "projects": {
-    "B:\\rustdesk\\rustdesk-setup\\rustdesk-setup.csproj": {
+    "Z:\\RustDesk\\rustdesk-setup\\rustdesk-setup.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "B:\\rustdesk\\rustdesk-setup\\rustdesk-setup.csproj",
+        "projectUniqueName": "Z:\\RustDesk\\rustdesk-setup\\rustdesk-setup.csproj",
         "projectName": "rustdesk-setup",
-        "projectPath": "B:\\rustdesk\\rustdesk-setup\\rustdesk-setup.csproj",
-        "packagesPath": "C:\\Users\\kb9gxk-jeff\\.nuget\\packages\\",
-        "outputPath": "B:\\rustdesk\\rustdesk-setup\\obj\\",
+        "projectPath": "Z:\\RustDesk\\rustdesk-setup\\rustdesk-setup.csproj",
+        "packagesPath": "C:\\Users\\jparrish\\.nuget\\packages\\",
+        "outputPath": "Z:\\RustDesk\\rustdesk-setup\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\kb9gxk-jeff\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\jparrish\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],

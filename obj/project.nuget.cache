@@ -1,16 +1,16 @@
 {
   "version": 2,
-  "dgSpecHash": "P34xxNt8PaY=",
+  "dgSpecHash": "1WjP5zPnOns=",
   "success": true,
-  "projectFilePath": "B:\\rustdesk\\rustdesk-setup\\rustdesk-setup.csproj",
+  "projectFilePath": "Z:\\RustDesk\\rustdesk-setup\\rustdesk-setup.csproj",
   "expectedPackageFiles": [
-    "C:\\Users\\kb9gxk-jeff\\.nuget\\packages\\microsoft.dotnet.ilcompiler\\9.0.1\\microsoft.dotnet.ilcompiler.9.0.1.nupkg.sha512",
-    "C:\\Users\\kb9gxk-jeff\\.nuget\\packages\\microsoft.net.illink.tasks\\9.0.1\\microsoft.net.illink.tasks.9.0.1.nupkg.sha512",
-    "C:\\Users\\kb9gxk-jeff\\.nuget\\packages\\runtime.win-x64.microsoft.dotnet.ilcompiler\\9.0.1\\runtime.win-x64.microsoft.dotnet.ilcompiler.9.0.1.nupkg.sha512",
-    "C:\\Users\\kb9gxk-jeff\\.nuget\\packages\\microsoft.netcore.app.runtime.win-x64\\9.0.1\\microsoft.netcore.app.runtime.win-x64.9.0.1.nupkg.sha512",
-    "C:\\Users\\kb9gxk-jeff\\.nuget\\packages\\microsoft.windowsdesktop.app.runtime.win-x64\\9.0.1\\microsoft.windowsdesktop.app.runtime.win-x64.9.0.1.nupkg.sha512",
-    "C:\\Users\\kb9gxk-jeff\\.nuget\\packages\\microsoft.aspnetcore.app.runtime.win-x64\\9.0.1\\microsoft.aspnetcore.app.runtime.win-x64.9.0.1.nupkg.sha512",
-    "C:\\Users\\kb9gxk-jeff\\.nuget\\packages\\runtime.win-x64.microsoft.dotnet.ilcompiler\\9.0.1\\runtime.win-x64.microsoft.dotnet.ilcompiler.9.0.1.nupkg.sha512"
+    "C:\\Users\\jparrish\\.nuget\\packages\\microsoft.dotnet.ilcompiler\\9.0.1\\microsoft.dotnet.ilcompiler.9.0.1.nupkg.sha512",
+    "C:\\Users\\jparrish\\.nuget\\packages\\microsoft.net.illink.tasks\\9.0.1\\microsoft.net.illink.tasks.9.0.1.nupkg.sha512",
+    "C:\\Users\\jparrish\\.nuget\\packages\\runtime.win-x64.microsoft.dotnet.ilcompiler\\9.0.1\\runtime.win-x64.microsoft.dotnet.ilcompiler.9.0.1.nupkg.sha512",
+    "C:\\Users\\jparrish\\.nuget\\packages\\microsoft.netcore.app.runtime.win-x64\\9.0.1\\microsoft.netcore.app.runtime.win-x64.9.0.1.nupkg.sha512",
+    "C:\\Users\\jparrish\\.nuget\\packages\\microsoft.windowsdesktop.app.runtime.win-x64\\9.0.1\\microsoft.windowsdesktop.app.runtime.win-x64.9.0.1.nupkg.sha512",
+    "C:\\Users\\jparrish\\.nuget\\packages\\microsoft.aspnetcore.app.runtime.win-x64\\9.0.1\\microsoft.aspnetcore.app.runtime.win-x64.9.0.1.nupkg.sha512",
+    "C:\\Users\\jparrish\\.nuget\\packages\\runtime.win-x64.microsoft.dotnet.ilcompiler\\9.0.1\\runtime.win-x64.microsoft.dotnet.ilcompiler.9.0.1.nupkg.sha512"
   ],
   "logs": []
 }
